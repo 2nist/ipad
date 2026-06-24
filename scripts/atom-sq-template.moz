@@ -29,17 +29,49 @@
     Call @LightPad
   endfor
 
+  // Plus/Minus (+/-) buttons are note-type RGB (notes 0/1) -- light like pads
+  litNote = 0
+  litR = 0
+  litG = 127
+  litB = 0
+  Call @LightPad                // Plus  -> green
+  litNote = 1
+  litR = 127
+  litG = 0
+  litB = 0
+  Call @LightPad                // Minus -> red
+
+  // Bank buttons A..H are CC-type RGB at CC 0..7 (from the decompile) -- dim blue.
+  // If they don't light, paste a bank-press log line and I'll fix the number/type.
+  for b = 0 to 7
+    ccNum = b
+    litR = 0
+    litG = 0
+    litB = 90
+    Call @LightCCButton
+  endfor
+
   lastPos = 0 - 1               // force first touch-strip LED update
   Call @ShowAll                 // OLED: try every text segment
 @End
 
 
-// ---- light pad `litNote` to RGB (litR, litG, litB) ----
+// ---- light pad `litNote` to RGB (litR, litG, litB) ----  (note-type RGB)
 @LightPad
   SendMIDINoteOn 1, litNote, litR     // ch1 = RED
   SendMIDINoteOn 2, litNote, litG     // ch2 = GREEN
   SendMIDINoteOn 3, litNote, litB     // ch3 = BLUE
   SendMIDINoteOn 0, litNote, 127      // ch0 = brightness: 127 on, 1 blink, 2 pulse, 0 off
+@End
+
+
+// ---- light CC-type RGB button `ccNum` to (litR, litG, litB) ----
+// Used for bank buttons (CC 0..7) and any other CC-addressed RGB button.
+@LightCCButton
+  SendMIDICC 1, ccNum, litR           // ch1 = RED
+  SendMIDICC 2, ccNum, litG           // ch2 = GREEN
+  SendMIDICC 3, ccNum, litB           // ch3 = BLUE
+  SendMIDICC 0, ccNum, 127            // ch0 = on
 @End
 
 
