@@ -92,13 +92,13 @@ F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii text…> F7
   the main areas are **6** (track-name) and **7** (device-name).
 - Text is ASCII, **max 18 chars** for the main area.
 
-Send it from Mozaic with `SendSysex arrayVar, length` after filling an array with those
-bytes. Because Mozaic has no string→bytes conversion, text must be supplied as ASCII codes
-(see `@ShowText` in the template).
+Send it from Mozaic with `SendSysex arrayVar, length`. Because Mozaic has no string→bytes
+conversion, text must be supplied as ASCII codes (see `@ShowText` in the template).
 
-> **Verify the wrapping:** it's unconfirmed whether `SendSysex` wants the full frame
-> *including* `F0`/`F7` (as the template does) or *without* them. If your build double-wraps,
-> drop the leading `240` and trailing `247` and shorten the length. Test and adjust.
+> **Confirmed:** `SendSysex` adds the `F0`/`F7` wrapper itself — the array must hold **only
+> the inner bytes** (`00 01 06 22 12 <seg> 00 5B 5B 01 <text>`), and `length` counts just
+> those. Including `240`/`247` makes Mozaic double-wrap (`F0 F0 … F7 F7`) and the device
+> ignores it — which is the classic "pads light but the screen stays blank" symptom.
 
 ---
 

@@ -65,10 +65,13 @@ length, echoes, strums, ratchets.
 
 ### SysEx
 ```
-SendSysex  arrayVar, length     // send `length` bytes from arrayVar as one SysEx blob
+SendSysex  arrayVar, length     // send `length` inner bytes; Mozaic adds F0/F7 itself
 SendSysexThru                   // pass an incoming SysEx through
 ReceiveSysex arrayVar           // copy the just-received SysEx into arrayVar
 ```
+> Do **not** put `240` (F0) or `247` (F7) in the array — Mozaic wraps them automatically.
+> `length` is the count of inner bytes. (Optional extra args do checksums: `SendSysex
+> arrayVar, length, checksumAlgo, checksumStartIndex`.)
 `SysexSize` (function) returns the byte count of the received SysEx. **This is what makes
 device feedback (e.g. the PreSonus ATOM SQ OLED display) possible from Mozaic.**
 

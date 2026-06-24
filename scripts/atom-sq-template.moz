@@ -130,31 +130,28 @@
 @End
 
 
-// ---- OPTIONAL: write text to the OLED (segment 6 = track-name area) ----
-// Frame: F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii...> F7
-// If the screen stays blank:
-//   1) make sure Mozaic's OUTPUT is routed to BOTH ATOM SQ ports in AUM -- the
-//      display may listen on "ATOM SQ Controller", not the main port;
-//   2) if still blank, some builds auto-wrap F0/F7 -- shift the inner bytes into
-//      disp[0]..disp[15] (drop 240 and 247) and send length 16.
+// ---- write text to the OLED (segment 6 = track-name area) ----
+// IMPORTANT: Mozaic adds the F0/F7 wrapper itself, so the array holds ONLY the
+// inner bytes. Do NOT include 240 (F0) or 247 (F7).
+// On the wire this becomes: F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii...> F7
+//   00 01 06 22 = PreSonus product id   18(0x12) = display header
+//   <seg> = 6 track-name / 7 device-name   then 00 5B 5B 01   then ascii text
 @ShowText
-  disp[0] = 240     // F0
-  disp[1] = 0
-  disp[2] = 1
-  disp[3] = 6
-  disp[4] = 34      // 0x22
-  disp[5] = 18      // 0x12  display header
-  disp[6] = 6       // segment id (6 = track-name, 7 = device-name)
-  disp[7] = 0
+  disp[0] = 0
+  disp[1] = 1
+  disp[2] = 6
+  disp[3] = 34      // 0x22
+  disp[4] = 18      // 0x12  display header
+  disp[5] = 6       // segment id (6 = track-name, 7 = device-name)
+  disp[6] = 0
+  disp[7] = 91      // 0x5B
   disp[8] = 91      // 0x5B
-  disp[9] = 91      // 0x5B
-  disp[10] = 1
-  disp[11] = 77     // 'M'
-  disp[12] = 79     // 'O'
-  disp[13] = 90     // 'Z'
-  disp[14] = 65     // 'A'
-  disp[15] = 73     // 'I'
-  disp[16] = 67     // 'C'
-  disp[17] = 247    // F7
-  SendSysex disp, 18
+  disp[9] = 1
+  disp[10] = 77     // 'M'
+  disp[11] = 79     // 'O'
+  disp[12] = 90     // 'Z'
+  disp[13] = 65     // 'A'
+  disp[14] = 73     // 'I'
+  disp[15] = 67     // 'C'
+  SendSysex disp, 16
 @End
