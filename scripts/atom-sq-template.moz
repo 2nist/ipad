@@ -1,32 +1,26 @@
-// atom-sq-template.moz
-// PreSonus ATOM SQ <-> Mozaic starter.
+// atom-sq-template.moz   (v2)
+// PreSonus ATOM SQ <-> Mozaic.
 //
-// Puts the ATOM SQ into NATIVE control mode, then:
-//   - lights all 32 pads dim blue at startup
-//   - lights a pad bright green while held, back to dim blue on release
-//   - decodes the 8 rotary encoders (relative) and logs their deltas
-//   - logs the transport buttons
-//   - writes a word to the OLED display via SysEx (see @ShowText + notes below)
+// On load: enters NATIVE mode and lights all 32 pads dim blue.
+// While running, ONE @OnMidiInput handler dispatches everything:
+//   - pads (notes 36..67): green while held, dim blue on release
+//   - logs EVERY CC, so all buttons/banks/modes/directionals/shift show up
+//   - decodes the 8 encoders (CC 14..21) as relative deltas
+//   - logs the touch strip (pitch bend on ch16) -- it is NOT a CC, which is why
+//     earlier versions missed it
+//   - writes text to the OLED via SysEx (see @ShowText + notes)
 //
-// MIDI map + caveats: docs/atom-sq-midi-map.md
-// (Map reverse-engineered from the Ableton control-surface script in userdl/ATOMSQ/.)
+// Map + caveats: docs/atom-sq-midi-map.md
 //
-// NOTE: the pad/LED map only works in NATIVE mode, which @OnLoad enables. Mozaic has no
-// unload event, so native mode stays on until you reload this script or power-cycle the
-// ATOM SQ. Channels below are 0-based (0 = MIDI channel 1).
+// Why one @OnMidiInput (instead of @OnMidiNoteOn/@OnMidiCC): so notes, CCs and
+// pitch-bend are all handled in a single unambiguous place. Channels are 0-based.
 
 @OnLoad
   SetShortName {ATOM SQ}
+  SendMIDIOut 143, 0, 1          // native mode ON (NoteOff ch16, note 0, vel 1)
 
-  // --- Enter ATOM SQ native control mode ---
-  // 143 = NoteOff on MIDI channel 16; note 0; velocity 1 = ON (0 = OFF)
-  SendMIDIOut 143, 0, 1
-
-  // Pad note range in native mode: lower row 36..51, upper row 52..67
   padLow = 36
   padHigh = 67
-
-  // Light every pad dim blue so you can see the surface is alive.
   for n = padLow to padHigh
     litNote = n
     litR = 0
@@ -35,87 +29,114 @@
     Call @LightPad
   endfor
 
-  // Demo: write to the OLED. Comment this out if the SysEx needs tweaking.
-  Call @ShowText
+  Call @ShowText                 // try the OLED (see notes in @ShowText)
 @End
 
 
-// ---- Subroutine: light pad `litNote` to RGB (litR, litG, litB) ----
-// ATOM SQ RGB scheme: red=ch1, green=ch2, blue=ch3, brightness/on=ch0.
+// ---- light pad `litNote` to RGB (litR, litG, litB) ----
 @LightPad
-  SendMIDINoteOn 1, litNote, litR
-  SendMIDINoteOn 2, litNote, litG
-  SendMIDINoteOn 3, litNote, litB
-  SendMIDINoteOn 0, litNote, 127     // 127=on, 1=blink, 2=pulse, 0=off
+  SendMIDINoteOn 1, litNote, litR     // ch1 = RED
+  SendMIDINoteOn 2, litNote, litG     // ch2 = GREEN
+  SendMIDINoteOn 3, litNote, litB     // ch3 = BLUE
+  SendMIDINoteOn 0, litNote, 127      // ch0 = brightness: 127 on, 1 blink, 2 pulse, 0 off
 @End
 
 
-@OnMidiNoteOn
-  // Pads arrive as notes 36..67 on MIDI channel 1 (MIDIChannel = 0).
-  if MIDINote >= 36
-    if MIDINote <= 67
-      litNote = MIDINote
-      litR = 0
-      litG = 127
-      litB = 0
-      Call @LightPad
-      Log {Pad down: }, MIDINote
+@OnMidiInput
+  status = MIDIByte1
+  if status >= 248
+    Exit                         // ignore clock / active-sensing
+  endif
+  d1 = MIDIByte2
+  d2 = MIDIByte3
+
+  // ---- classify the message ----
+  kind = 0                       // 1=noteOn 2=noteOff 3=CC 4=pitchbend
+  if status >= 128
+    if status <= 143
+      kind = 2
     endif
   endif
-@End
-
-
-@OnMidiNoteOff
-  if MIDINote >= 36
-    if MIDINote <= 67
-      litNote = MIDINote
-      litR = 0
-      litG = 0
-      litB = 32
-      Call @LightPad
-    endif
-  endif
-@End
-
-
-@OnMidiCC
-  cc = MIDIByte2
-  val = MIDIByte3
-
-  // The 8 rotary encoders are CC 14..21, sent RELATIVE (sign-bit).
-  if cc >= 14
-    if cc <= 21
-      encoder = cc - 14
-      if val < 64
-        delta = val                 // clockwise
+  if status >= 144
+    if status <= 159
+      if d2 > 0
+        kind = 1
       else
-        delta = 0 - (val - 64)      // counter-clockwise
+        kind = 2
       endif
-      Log {Encoder }, encoder, { delta }, delta
+    endif
+  endif
+  if status >= 176
+    if status <= 191
+      kind = 3
+    endif
+  endif
+  if status >= 224
+    if status <= 239
+      kind = 4
     endif
   endif
 
-  // Transport buttons send value 127 on press.
-  if val > 0
-    if cc = 109
-      Log {PLAY pressed}
+  // ---- pad pressed: light green ----
+  if kind = 1
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 127
+        litB = 0
+        Call @LightPad
+      endif
     endif
-    if cc = 111
-      Log {STOP pressed}
+    Log {Note ON }, d1, { vel }, d2
+  endif
+
+  // ---- pad released: back to dim blue ----
+  if kind = 2
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 0
+        litB = 32
+        Call @LightPad
+      endif
     endif
-    if cc = 107
-      Log {RECORD pressed}
+  endif
+
+  // ---- CC: encoders (14..21) relative, everything else logged raw ----
+  if kind = 3
+    if d1 >= 14
+      if d1 <= 21
+        enc = d1 - 14
+        if d2 < 64
+          delta = d2
+        else
+          delta = 0 - (d2 - 64)
+        endif
+        Log {Enc }, enc, { delta }, delta
+      else
+        Log {CC }, d1, { = }, d2
+      endif
+    else
+      Log {CC }, d1, { = }, d2
     endif
+  endif
+
+  // ---- touch strip: pitch bend on ch16 ----
+  if kind = 4
+    Log {Strip lsb }, d1, { msb }, d2
   endif
 @End
 
 
 // ---- OPTIONAL: write text to the OLED (segment 6 = track-name area) ----
-// Frame (userdl/ATOMSQ/elements.py):
-//   F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii text...> F7
-// Mozaic has no string->bytes, so text is hardcoded as ASCII codes ("MOZAIC").
-// VERIFY: if SendSysex double-wraps F0/F7, drop disp[0] (240) and disp[17] (247) and
-// send length 16 from index 1 -- check against the manual / by ear.
+// Frame: F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii...> F7
+// If the screen stays blank:
+//   1) make sure Mozaic's OUTPUT is routed to BOTH ATOM SQ ports in AUM -- the
+//      display may listen on "ATOM SQ Controller", not the main port;
+//   2) if still blank, some builds auto-wrap F0/F7 -- shift the inner bytes into
+//      disp[0]..disp[15] (drop 240 and 247) and send length 16.
 @ShowText
   disp[0] = 240     // F0
   disp[1] = 0

@@ -19,7 +19,8 @@ If Mozaic reports a syntax error, copy the message back to Claude and it'll fix 
 |--------|:---:|--------------|
 | [velocity-transpose.moz](velocity-transpose.moz) | No | Transpose incoming notes + optional fixed velocity. Best first test — reacts to every note immediately. |
 | [arpeggiator.moz](arpeggiator.moz) | **Yes** | Plays a held chord one note at a time, synced to the host clock. Knobs: Rate, Gate. |
-| [atom-sq-template.moz](atom-sq-template.moz) | No | PreSonus ATOM SQ starter — native mode, RGB pad feedback, relative-encoder decode, OLED text. See [../docs/atom-sq-midi-map.md](../docs/atom-sq-midi-map.md). |
+| [atom-sq-template.moz](atom-sq-template.moz) | No | PreSonus ATOM SQ starter — native mode, RGB pad feedback, logs every button/encoder + touch strip, OLED text. See [../docs/atom-sq-midi-map.md](../docs/atom-sq-midi-map.md). |
+| [atom-sq-mapper.moz](atom-sq-mapper.moz) | No | Diagnostic — logs every incoming MIDI byte so you can map every ATOM SQ control. |
 
 ## Ideas to ask Claude for next
 

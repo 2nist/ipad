@@ -44,7 +44,8 @@ scripts and you load them into your AU host (AUM, Drambo, apeMatrix, Loopy Pro, 
 | [docs/atom-sq-midi-map.md](docs/atom-sq-midi-map.md) | PreSonus ATOM SQ MIDI map (input, RGB LEDs, OLED, native mode) |
 | [scripts/velocity-transpose.moz](scripts/velocity-transpose.moz) | Dead-simple utility to test the loop end-to-end (no host transport needed) |
 | [scripts/arpeggiator.moz](scripts/arpeggiator.moz) | Host-synced arpeggiator (press Play in your host) |
-| [scripts/atom-sq-template.moz](scripts/atom-sq-template.moz) | ATOM SQ starter: native mode, lit pads, encoders, OLED |
+| [scripts/atom-sq-template.moz](scripts/atom-sq-template.moz) | ATOM SQ starter: native mode, lit pads, logs all controls, OLED |
+| [scripts/atom-sq-mapper.moz](scripts/atom-sq-mapper.moz) | ATOM SQ diagnostic: logs every incoming MIDI byte to map controls |
 | [scripts/README.md](scripts/README.md) | How to load a script into Mozaic, script-by-script notes |
 
 ## First run
