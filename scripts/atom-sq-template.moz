@@ -1,0 +1,139 @@
+// atom-sq-template.moz
+// PreSonus ATOM SQ <-> Mozaic starter.
+//
+// Puts the ATOM SQ into NATIVE control mode, then:
+//   - lights all 32 pads dim blue at startup
+//   - lights a pad bright green while held, back to dim blue on release
+//   - decodes the 8 rotary encoders (relative) and logs their deltas
+//   - logs the transport buttons
+//   - writes a word to the OLED display via SysEx (see @ShowText + notes below)
+//
+// MIDI map + caveats: docs/atom-sq-midi-map.md
+// (Map reverse-engineered from the Ableton control-surface script in userdl/ATOMSQ/.)
+//
+// NOTE: the pad/LED map only works in NATIVE mode, which @OnLoad enables. Mozaic has no
+// unload event, so native mode stays on until you reload this script or power-cycle the
+// ATOM SQ. Channels below are 0-based (0 = MIDI channel 1).
+
+@OnLoad
+  SetShortName {ATOM SQ}
+
+  // --- Enter ATOM SQ native control mode ---
+  // 143 = NoteOff on MIDI channel 16; note 0; velocity 1 = ON (0 = OFF)
+  SendMIDIOut 143, 0, 1
+
+  // Pad note range in native mode: lower row 36..51, upper row 52..67
+  padLow = 36
+  padHigh = 67
+
+  // Light every pad dim blue so you can see the surface is alive.
+  for n = padLow to padHigh
+    litNote = n
+    litR = 0
+    litG = 0
+    litB = 32
+    Call @LightPad
+  endfor
+
+  // Demo: write to the OLED. Comment this out if the SysEx needs tweaking.
+  Call @ShowText
+@End
+
+
+// ---- Subroutine: light pad `litNote` to RGB (litR, litG, litB) ----
+// ATOM SQ RGB scheme: red=ch1, green=ch2, blue=ch3, brightness/on=ch0.
+@LightPad
+  SendMIDINoteOn 1, litNote, litR
+  SendMIDINoteOn 2, litNote, litG
+  SendMIDINoteOn 3, litNote, litB
+  SendMIDINoteOn 0, litNote, 127     // 127=on, 1=blink, 2=pulse, 0=off
+@End
+
+
+@OnMidiNoteOn
+  // Pads arrive as notes 36..67 on MIDI channel 1 (MIDIChannel = 0).
+  if MIDINote >= 36
+    if MIDINote <= 67
+      litNote = MIDINote
+      litR = 0
+      litG = 127
+      litB = 0
+      Call @LightPad
+      Log {Pad down: }, MIDINote
+    endif
+  endif
+@End
+
+
+@OnMidiNoteOff
+  if MIDINote >= 36
+    if MIDINote <= 67
+      litNote = MIDINote
+      litR = 0
+      litG = 0
+      litB = 32
+      Call @LightPad
+    endif
+  endif
+@End
+
+
+@OnMidiCC
+  cc = MIDIByte2
+  val = MIDIByte3
+
+  // The 8 rotary encoders are CC 14..21, sent RELATIVE (sign-bit).
+  if cc >= 14
+    if cc <= 21
+      encoder = cc - 14
+      if val < 64
+        delta = val                 // clockwise
+      else
+        delta = 0 - (val - 64)      // counter-clockwise
+      endif
+      Log {Encoder }, encoder, { delta }, delta
+    endif
+  endif
+
+  // Transport buttons send value 127 on press.
+  if val > 0
+    if cc = 109
+      Log {PLAY pressed}
+    endif
+    if cc = 111
+      Log {STOP pressed}
+    endif
+    if cc = 107
+      Log {RECORD pressed}
+    endif
+  endif
+@End
+
+
+// ---- OPTIONAL: write text to the OLED (segment 6 = track-name area) ----
+// Frame (userdl/ATOMSQ/elements.py):
+//   F0 00 01 06 22 12 <seg> 00 5B 5B 01 <ascii text...> F7
+// Mozaic has no string->bytes, so text is hardcoded as ASCII codes ("MOZAIC").
+// VERIFY: if SendSysex double-wraps F0/F7, drop disp[0] (240) and disp[17] (247) and
+// send length 16 from index 1 -- check against the manual / by ear.
+@ShowText
+  disp[0] = 240     // F0
+  disp[1] = 0
+  disp[2] = 1
+  disp[3] = 6
+  disp[4] = 34      // 0x22
+  disp[5] = 18      // 0x12  display header
+  disp[6] = 6       // segment id (6 = track-name, 7 = device-name)
+  disp[7] = 0
+  disp[8] = 91      // 0x5B
+  disp[9] = 91      // 0x5B
+  disp[10] = 1
+  disp[11] = 77     // 'M'
+  disp[12] = 79     // 'O'
+  disp[13] = 90     // 'Z'
+  disp[14] = 65     // 'A'
+  disp[15] = 73     // 'I'
+  disp[16] = 67     // 'C'
+  disp[17] = 247    // F7
+  SendSysex disp, 18
+@End

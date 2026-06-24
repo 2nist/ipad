@@ -1,0 +1,43 @@
+// velocity-transpose.mozaic
+// A dead-simple MIDI utility to prove the iPad <-> Claude loop end to end.
+// Transposes incoming notes and can force a fixed velocity.
+// Works INSTANTLY on any incoming note — the host transport does NOT need to be playing.
+//
+// Knob 0: Transpose  (center = 0 semitones; full left = -64, full right = +63)
+// Knob 1: Fixed Vel  (0 = keep the original velocity; 1..127 = force that velocity)
+
+@OnLoad
+  ShowLayout 2
+  LabelKnob 0, {Transpose}
+  SetKnobValue 0, 64          // 64 = no transpose
+  LabelKnob 1, {Fixed Vel}
+  SetKnobValue 1, 0           // 0 = pass original velocity through
+@End
+
+@OnMidiNoteOn
+  raw = GetKnobValue 0
+  shift = raw - 64
+  outNote = MIDINote + shift
+  if outNote < 0
+    outNote = 0
+  endif
+  if outNote > 127
+    outNote = 127
+  endif
+
+  outVel = MIDIVelocity
+  fixedVel = GetKnobValue 1
+  if fixedVel > 0
+    outVel = fixedVel
+  endif
+
+  // Remember the note we actually sent so the NoteOff matches even if the
+  // Transpose knob is moved while the key is still held (prevents stuck notes).
+  sentNote[MIDINote] = outNote
+  SendMIDINoteOn MIDIChannel, outNote, outVel
+@End
+
+@OnMidiNoteOff
+  outNote = sentNote[MIDINote]
+  SendMIDINoteOff MIDIChannel, outNote, 0
+@End
