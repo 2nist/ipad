@@ -246,16 +246,32 @@
 // ---- OLED: mode name on segment 6 (track name area) ----
 @SetOLED
   if mode = 0
-    txt[0] = 68 / txt[1] = 82 / txt[2] = 85 / txt[3] = 77 / txt[4] = 83
+    txt[0] = 68
+    txt[1] = 82
+    txt[2] = 85
+    txt[3] = 77
+    txt[4] = 83
     txtLen = 5                 // DRUMS
   elseif mode = 1
-    txt[0] = 71 / txt[1] = 76 / txt[2] = 73 / txt[3] = 84 / txt[4] = 67 / txt[5] = 72
+    txt[0] = 71
+    txt[1] = 76
+    txt[2] = 73
+    txt[3] = 84
+    txt[4] = 67
+    txt[5] = 72
     txtLen = 6                 // GLITCH
   elseif mode = 2
-    txt[0] = 83 / txt[1] = 65 / txt[2] = 77 / txt[3] = 80 / txt[4] = 76 / txt[5] = 69
+    txt[0] = 83
+    txt[1] = 65
+    txt[2] = 77
+    txt[3] = 80
+    txt[4] = 76
+    txt[5] = 69
     txtLen = 6                 // SAMPLE
   elseif mode = 3
-    txt[0] = 83 / txt[1] = 69 / txt[2] = 81
+    txt[0] = 83
+    txt[1] = 69
+    txt[2] = 81
     txtLen = 3                 // SEQ
   endif
   segId = 6
