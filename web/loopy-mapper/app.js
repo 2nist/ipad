@@ -1,14 +1,25 @@
 "use strict";
 
 const TEMPLATE_ROOT = "template/drum-looper.lpproj";
-const PROFILE_PATH = "Control Profiles/Drums.lpcontrolprofile/ATOM SQ.MIDI.ATOM SQ.controllerprofile";
+
+// The project's ACTIVE control profile, named "Default" in Project.sqlite
+// (activeControlProfileNames = ["Default"]), lives in this singular folder.
+// Loopy enumerates every <Device>.<Type>.<Name>.controllerprofile inside it and
+// binds those devices on load. The generated device profile MUST land here to
+// take effect — see ACTIVE_PROFILE_DIR usage in exportProject().
+const ACTIVE_PROFILE_DIR = "Control Profile.lpcontrolprofile";
+// The named "Drums" library profile (plural folder) is inactive on import; we keep
+// it in sync as a convenience for users who later switch profiles by name.
+const LIBRARY_PROFILE_DIR = "Control Profiles/Drums.lpcontrolprofile";
+
+// Files copied verbatim from the template. The generated device profile is NOT
+// listed here — it is written into both profile folders in exportProject().
 const TEMPLATE_FILES = [
   "Info.plist",
   "Project.sqlite",
   "Resources.plist",
-  "Control Profile.lpcontrolprofile/Internal.Internal.controllerprofile",
-  PROFILE_PATH,
-  "Control Profiles/Drums.lpcontrolprofile/mVave Chocolate.MIDI.Chocolate.controllerprofile"
+  `${ACTIVE_PROFILE_DIR}/Internal.Internal.controllerprofile`,
+  `${LIBRARY_PROFILE_DIR}/mVave Chocolate.MIDI.Chocolate.controllerprofile`
 ];
 
 const ALLOWED_ACTIONS = new Set([
@@ -348,20 +359,28 @@ async function exportProject() {
     const projectName = sanitizeFilePart(result.config.project && result.config.project.name || "Generated Loopy Mapping");
     const root = `${projectName}.lpproj`;
     const profileXml = generateControllerProfile(result.config, result.bindings);
+    const deviceName = sanitizeFilePart(result.config.device && result.config.device.name || "ATOM SQ");
+    const profileFileName = `${deviceName}.MIDI.${deviceName}.controllerprofile`;
+    const profileBytes = new TextEncoder().encode(profileXml);
     const files = [];
 
+    // Copy the static template files verbatim.
     for (const relativePath of TEMPLATE_FILES) {
-      if (relativePath === PROFILE_PATH) {
-        files.push({
-          name: `${root}/${relativePath}`,
-          data: new TextEncoder().encode(profileXml)
-        });
-      } else {
-        files.push({
-          name: `${root}/${relativePath}`,
-          data: await fetchTemplateFile(relativePath)
-        });
-      }
+      files.push({
+        name: `${root}/${relativePath}`,
+        data: await fetchTemplateFile(relativePath)
+      });
+    }
+
+    // Write the generated device profile into the ACTIVE profile folder so the
+    // mappings actually attach on import, plus the named library folder to keep
+    // the "Drums" profile in sync. (Previously it only went to the inactive
+    // library folder, which is why imported mappings never took effect.)
+    for (const dir of [ACTIVE_PROFILE_DIR, LIBRARY_PROFILE_DIR]) {
+      files.push({
+        name: `${root}/${dir}/${profileFileName}`,
+        data: profileBytes
+      });
     }
 
     const zip = createZip(files);
