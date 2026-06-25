@@ -3,22 +3,9 @@
 generate-drum-project.py
 Builds projects/drum-machine.drproject from the Mozaictrk1 template.
 
-What it does:
-  - Loads scripts/Mozaictrk1.drproject (binary plist with Mozaic already wired)
-  - Replaces the Mozaic script CODE with scripts/atom-sq-drums.moz
-  - Routes sub-track 1 MIDI output to ATOM SQ (LED feedback)
-  - Replaces sub-track 2 modules with 8 native drum voices (notes 36-43)
-  - Saves as projects/drum-machine.drproject (binary plist)
-
-Drum voices:
-  36 Kick    — BS808KickModule (AN Kick)
-  37 Rim     — BSImpulseModule + envelope
-  38 Snare   — BSImpulseModule + noise + envelope
-  39 Perc1   — BSNoiseModulePoly (hi-pitched) + envelope
-  40 Perc2   — BSNoiseModulePoly (lo-pitched) + envelope
-  41 OpenHat — BSNoiseModulePoly + long envelope
-  42 ClsdHat — BSNoiseModulePoly + short envelope
-  43 SubKick — BS808KickModule (sub settings)
+Drum sounds: DR Rackula factory rack (/Instrument rack/3s-drums/DR Rackula.drmodule)
+cloned from userdl/Building-blocks.drproject with pids remapped and note-range
+filter widened to accept ATOM SQ pads (notes 36-43).
 
 Usage:
   python3 tools/generate-drum-project.py
@@ -27,382 +14,126 @@ import copy
 import plistlib
 from pathlib import Path
 
-REPO     = Path(__file__).parent.parent
-TEMPLATE = REPO / 'scripts' / 'Mozaictrk1.drproject'
-SCRIPT   = REPO / 'scripts' / 'atom-sq-drums.moz'
-OUTPUT   = REPO / 'projects' / 'drum-machine.drproject'
+REPO      = Path(__file__).parent.parent
+TEMPLATE  = REPO / 'scripts' / 'Mozaictrk1.drproject'
+SCRIPT    = REPO / 'scripts' / 'atom-sq-drums.moz'
+BUILDING  = REPO / 'userdl' / 'Building-blocks.drproject'
+SKELETON  = REPO / 'Master.drproject'
+OUTPUT    = REPO / 'projects' / 'drum-machine.drproject'
 
 # ── pid counter ─────────────────────────────────────────────────────────────
-# All pids are scoped to sub-track 2's modules array. They just need to be
-# unique within that scope. We start above any pids already used at the
-# sub-track level (params use 41-57 in template).
-_pid_counter = [200]
+# All new pids must be unique across the project. Template pids reach ~190,
+# so we start safely above that.
+_pid = [200]
 
 def npid():
-    _pid_counter[0] += 1
-    return _pid_counter[0]
+    _pid[0] += 1
+    return _pid[0]
 
-# ── module builders ──────────────────────────────────────────────────────────
+# ── DR Rackula clone ─────────────────────────────────────────────────────────
+# Building-blocks contains a live, working BSCustomRackModule that references
+# the factory preset /Instrument rack/3s-drums/DR Rackula.drmodule. It has its
+# full internal structure serialised. We deep-copy it, remap every "owned" pid
+# to a fresh unique value, then fix the three external input opids that pointed
+# to Building-blocks' sub-track ioutputs so they point to our track instead.
+# Finally we widen the outer MIDI filter from notes 48-119 to 0-127 so ATOM SQ
+# pads (notes 36-43) are not blocked.
 
-def midi_filter(midi_opid, note):
-    """Pass-through for one specific MIDI note. Returns (module_dict, midi_out_pid)."""
-    m  = npid()
-    p0 = npid()   # enabled
-    p1 = npid()   # minNote
-    p2 = npid()   # maxNote
-    out = npid()  # MIDI output
-    return {
-        'class': 'BSMidiFilterModule',
-        'hcv': False,
-        'inputs': [{'ac': True, 'ace': True, 'opid': midi_opid, 'tp': 5}],
-        'modelId': 0,
-        'modelName': 'Note filter',
-        'name': f'Note {note}',
-        'outputs': [{'pid': out, 'tp': 5}],
-        'params': [
-            {'hcv': False, 'pid': p0, 'v': 1.0},
-            {'hcv': False, 'pid': p1, 'v': float(note)},
-            {'hcv': False, 'pid': p2, 'v': float(note)},
-        ],
-        'pid': m,
-    }, out
+def clone_dr_rackula(our_audio_in, our_midi_in, our_time_in):
+    """
+    Returns (module_dict, audio_out_pid).
+    our_audio_in / our_midi_in / our_time_in: pids from the drum sub-track's
+    ioutputs that feed audio/MIDI/time signals into the rack.
+    """
+    with open(BUILDING, 'rb') as f:
+        bb = plistlib.load(f)
+    bb_drum_sub = bb['tracks']['modules'][0]
 
-def midi_to_cv(midi_opid):
-    """MIDI → Key/Gate/Velocity CVs. Returns (module, key_pid, gate_pid, vel_pid)."""
-    m   = npid()
-    p0  = npid()     # mode
-    p1  = npid()     # retrig
-    k   = npid()     # Key output (pitch)
-    g   = npid()     # Gate output
-    v   = npid()     # Velocity output
-    return {
-        'class': 'BSMidiToCVModule',
-        'hcv': False,
-        'inputs': [{'ac': True, 'ace': True, 'opid': midi_opid, 'tp': 5}],
-        'modelId': 0,
-        'modelName': 'MIDI to CV',
-        'mr': True,
-        'name': 'MIDI to CV',
-        'outputs': [
-            {'nm': 'Key', 'pid': k, 'tp': 2},
-            {'nm': 'G',   'pid': g, 'tp': 3},
-            {'nm': 'V',   'pid': v, 'tp': 4},
-        ],
-        'params': [
-            {'hcv': False, 'pid': p0, 'v': 1.0},
-            {'hcv': False, 'pid': p1, 'v': 0.0},
-        ],
-        'pid': m,
-        'vam': 0,
-    }, k, g, v
+    # Building-blocks' drum sub-track ioutputs pids — these are the external
+    # signals the DR Rackula's inputs point to (opid 27=audio, 28=MIDI, 29=time).
+    bb_audio_in = bb_drum_sub['ioutputs'][0]['pid']   # 27
+    bb_midi_in  = bb_drum_sub['ioutputs'][1]['pid']   # 28
+    bb_time_in  = bb_drum_sub['ioutputs'][2]['pid']   # 29
 
-def an_kick(gate_opid, freq_start=-0.16, pitch_decay=0.079, noise_lv=0.0):
-    """BS808KickModule (AN Kick). Returns (module, audio_out_pid)."""
-    m   = npid()
-    p0  = npid()   # amplitude
-    p1  = npid()   # freq_start
-    p2  = npid()   # pitch_decay
-    p3  = npid()   # noise
-    out = npid()   # audio out
-    return {
-        'class': 'BS808KickModule',
-        'hcv': False,
-        'inputs': [
-            {'ac': True,  'ace': True,  'opid': gate_opid, 'tp': 3},
-            {'ac': False, 'ace': False, 'tp': 4},
-        ],
-        'modelId': 0,
-        'modelName': 'AN Kick',
-        'name': 'Kick Osc',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': [
-            {'hcv': False, 'pid': p0, 'v': 1.0},
-            {'hcv': False, 'pid': p1, 'v': freq_start},
-            {'hcv': False, 'pid': p2, 'v': pitch_decay},
-            {'hcv': False, 'pid': p3, 'v': noise_lv},
-        ],
-        'pid': m,
-    }, out
+    rack = copy.deepcopy(bb_drum_sub['modules'][0])   # the BSCustomRackModule
 
-def impulse_osc(gate_opid, vel_opid, freq=200.0):
-    """BSImpulseModule. Returns (module, audio_out_pid)."""
-    m   = npid()
-    out = npid()
-    params = []
-    for v in [1.0, 0.0, freq, 1.0, 1.0, 0.686]:
-        params.append({'hcv': False, 'pid': npid(), 'v': v})
-    return {
-        'class': 'BSImpulseModule',
-        'hcv': False,
-        'inputs': [
-            {'ac': True, 'ace': True, 'opid': gate_opid, 'tp': 3},
-            {'ac': True, 'ace': True, 'opid': vel_opid,  'tp': 4},
-        ],
-        'modelId': 0,
-        'modelName': 'Impulse',
-        'name': 'Impulse',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': params,
-        'pid': m,
-    }, out
+    # Collect every pid that belongs to (is "owned by") this module tree.
+    # External opids (27, 28, 29) are references — not owned — so they won't
+    # be in this set and will survive the remap unchanged.
+    owned = set()
+    def gather(o):
+        if isinstance(o, dict):
+            if isinstance(o.get('pid'), int):
+                owned.add(o['pid'])
+            for v in o.values():
+                gather(v)
+        elif isinstance(o, list):
+            for v in o:
+                gather(v)
+    gather(rack)
 
-def noise_osc(model_id=3):
-    """BSNoiseModulePoly. Returns (module, audio_out_pid)."""
-    m   = npid()
-    out = npid()
-    params = []
-    for v in [1.0, 0.5, 1.0]:
-        params.append({'hcv': False, 'pid': npid(), 'v': v})
-    return {
-        'class': 'BSNoiseModulePoly',
-        'hcv': False,
-        'inputs': [],
-        'modelId': model_id,
-        'modelName': 'Noise',
-        'name': 'Noise',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': params,
-        'pid': m,
-    }, out
+    # Map each owned pid to a fresh unique value.
+    remap = {pid: npid() for pid in sorted(owned)}
+    old_audio_out = rack['outputs'][0]['pid']   # will be in remap
 
-def mix2(opid_a, opid_b, vol_a=0.7, vol_b=0.5):
-    """BSMixerModule with 2 inputs. Returns (module, audio_out_pid)."""
-    m   = npid()
-    out = npid()
-    return {
-        'class': 'BSMixerModule',
-        'hcv': False,
-        'inputs': [
-            {'ac': True, 'ace': True, 'opid': opid_a, 'tp': 0},
-            {'ac': True, 'ace': True, 'opid': opid_b, 'tp': 0},
-        ],
-        'modelId': 0,
-        'modelName': 'Mixer',
-        'name': 'Mix',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': [
-            {'hcv': False, 'pid': npid(), 'v': vol_a},
-            {'hcv': False, 'pid': npid(), 'v': 0.5},
-            {'hcv': False, 'pid': npid(), 'v': vol_b},
-            {'hcv': False, 'pid': npid(), 'v': 0.5},
-        ],
-        'pid': m,
-    }, out
+    def apply(o):
+        if isinstance(o, dict):
+            if o.get('pid') in remap:
+                o['pid'] = remap[o['pid']]
+            if isinstance(o.get('opid'), int) and o['opid'] in remap:
+                o['opid'] = remap[o['opid']]
+            for v in o.values():
+                apply(v)
+        elif isinstance(o, list):
+            for v in o:
+                apply(v)
+    apply(rack)
 
-def amp_env_ad2(audio_opid, gate_opid, vel_opid, attack=1.0, decay=100.0):
-    """BSAmpEnvelopeModuleAD2. Returns (module, audio_out_pid)."""
-    m   = npid()
-    out = npid()
-    params = []
-    for v in [1.0, attack, decay, 1.0, 1.0, 0.0]:
-        params.append({'hcv': False, 'pid': npid(), 'v': v})
-    return {
-        'class': 'BSAmpEnvelopeModuleAD2',
-        'hcv': False,
-        'inputs': [
-            {'ac': True, 'ace': False, 'opid': audio_opid, 'tp': 0},
-            {'ac': True, 'ace': True,  'opid': gate_opid,  'tp': 3},
-            {'ac': True, 'ace': True,  'opid': vel_opid,   'tp': 4},
-        ],
-        'modelId': 0,
-        'modelName': 'Amp env AD',
-        'name': 'Amp Env',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': params,
-        'pid': m,
-    }, out
+    new_audio_out = remap[old_audio_out]
 
-def drum_mixer(input_opids):
-    """Final BSMixerModule summing all 8 voices. Returns (module, audio_out_pid)."""
-    m   = npid()
-    out = npid()
-    inputs = []
-    params = []
-    for opid in input_opids:
-        inputs.append({'ac': True, 'ace': True, 'opid': opid, 'tp': 0})
-        params.append({'hcv': False, 'pid': npid(), 'v': 0.8})  # level
-        params.append({'hcv': False, 'pid': npid(), 'v': 0.5})  # pan
-    return {
-        'class': 'BSMixerModule',
-        'hcv': False,
-        'inputs': inputs,
-        'modelId': 0,
-        'modelName': 'Mixer',
-        'name': 'Drum Bus',
-        'outputs': [{'pid': out, 'tp': 0}],
-        'params': params,
-        'pid': m,
-    }, out
+    # Fix the three external input opids to point to our drum sub-track signals.
+    ext_map = {bb_audio_in: our_audio_in,
+               bb_midi_in:  our_midi_in,
+               bb_time_in:  our_time_in}
+    for inp in rack.get('inputs', []):
+        old = inp.get('opid')
+        if old in ext_map:
+            inp['opid'] = ext_map[old]
 
-# ── build the 8 drum voices ──────────────────────────────────────────────────
-# MIDI bus pid: this is the opid inside sub-track 2 that carries incoming MIDI.
-# Sub-track 2's iinputs assigns MIDI to opid=58. All BSMidiFilterModules read from it.
-MIDI_BUS = 58
+    # Widen the outer MIDI note-range filter from 48-119 to 0-127 so that ATOM
+    # SQ pads (notes 36-43) are not blocked before reaching the drum voices.
+    for m in rack.get('modules', []):
+        if m.get('class') == 'BSMidiFilterModule':
+            params = m.get('params', [])
+            if len(params) >= 3:
+                params[1]['v'] = 0.0    # minNote  (was 48.0)
+                params[2]['v'] = 127.0  # maxNote
+            break
 
-voice_modules = []
-voice_outs = []
+    return rack, new_audio_out
 
-# ── 36 KICK ──────────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 36)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-kk, kk_o = an_kick(cv_g, freq_start=-0.16, pitch_decay=0.079)
-voice_modules += [mf, cv, kk]
-voice_outs.append(kk_o)
 
-# ── 37 RIM ───────────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 37)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-im, im_o = impulse_osc(cv_g, cv_v, freq=400.0)
-ae, ae_o = amp_env_ad2(im_o, cv_g, cv_v, attack=1.0, decay=25.0)
-voice_modules += [mf, cv, im, ae]
-voice_outs.append(ae_o)
+# ── Mixer track cloning (A / B / Master) ─────────────────────────────────────
 
-# ── 38 SNARE ─────────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 38)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-im, im_o = impulse_osc(cv_g, cv_v, freq=180.0)
-nz, nz_o = noise_osc(model_id=3)
-mx, mx_o = mix2(im_o, nz_o, vol_a=0.6, vol_b=0.5)
-ae, ae_o = amp_env_ad2(mx_o, cv_g, cv_v, attack=1.0, decay=75.0)
-voice_modules += [mf, cv, im, nz, mx, ae]
-voice_outs.append(ae_o)
-
-# ── 39 PERC 1 ────────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 39)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-nz, nz_o = noise_osc(model_id=1)   # model 1 = different noise colour
-ae, ae_o = amp_env_ad2(nz_o, cv_g, cv_v, attack=1.0, decay=40.0)
-voice_modules += [mf, cv, nz, ae]
-voice_outs.append(ae_o)
-
-# ── 40 PERC 2 ────────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 40)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-nz, nz_o = noise_osc(model_id=2)   # model 2 = different noise colour
-ae, ae_o = amp_env_ad2(nz_o, cv_g, cv_v, attack=1.0, decay=55.0)
-voice_modules += [mf, cv, nz, ae]
-voice_outs.append(ae_o)
-
-# ── 41 OPEN HAT ──────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 41)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-nz, nz_o = noise_osc(model_id=3)
-ae, ae_o = amp_env_ad2(nz_o, cv_g, cv_v, attack=1.0, decay=400.0)
-voice_modules += [mf, cv, nz, ae]
-voice_outs.append(ae_o)
-
-# ── 42 CLOSED HAT ────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 42)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-nz, nz_o = noise_osc(model_id=3)
-ae, ae_o = amp_env_ad2(nz_o, cv_g, cv_v, attack=1.0, decay=25.0)
-voice_modules += [mf, cv, nz, ae]
-voice_outs.append(ae_o)
-
-# ── 43 SUB KICK ──────────────────────────────────────────────────────────────
-mf, mf_o = midi_filter(MIDI_BUS, 43)
-cv, cv_k, cv_g, cv_v = midi_to_cv(mf_o)
-sk, sk_o = an_kick(cv_g, freq_start=-0.55, pitch_decay=0.03)  # low, slow sweep
-voice_modules += [mf, cv, sk]
-voice_outs.append(sk_o)
-
-# ── Master drum mixer ─────────────────────────────────────────────────────────
-dm, dm_o = drum_mixer(voice_outs)
-voice_modules.append(dm)
-
-# ── Assemble the project ─────────────────────────────────────────────────────
-with open(TEMPLATE, 'rb') as f:
-    proj = plistlib.load(f)
-
-proj['projectName'] = 'drum-machine'
-
-tracks = proj['tracks']
-sub_tracks = tracks.get('modules', [])
-
-# Find the root rack's 'Time' ioutput pid — every sub-track taps it on inputs[1].
 def time_pid(rack):
     for io in rack.get('ioutputs', []):
         if io.get('nm') == 'Time':
             return io['pid']
     return None
 
-my_root_time = time_pid(tracks)
-
-# ── Inject atom-sq-drums.moz script into Mozaic (sub-track 1) ────────────────
-def find_au_midi(module_list):
-    for m in module_list:
-        if m.get('class') == 'BSAUMidiModule':
-            return m
-        if 'modules' in m:
-            found = find_au_midi(m['modules'])
-            if found:
-                return found
-    return None
-
-mozaic = find_au_midi(sub_tracks)
-if not mozaic:
-    raise RuntimeError('BSAUMidiModule not found in template')
-
-script_text = SCRIPT.read_text(encoding='utf-8')
-mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
-
-def wire_time(track, root_time):
-    """Tap the root rack's Time signal on inputs[1], like every working track does."""
-    ins = track.get('inputs')
-    if ins and len(ins) >= 2 and root_time is not None:
-        ins[1] = {'ac': True, 'ace': True, 'opid': root_time, 'tp': 6}
-
 def set_bus(track, src, d1, d2, d3):
-    """Audio bus routing — the values Drambo uses to flow audio between tracks.
-    Mix tracks send their fader output to bus 2 ('A Master'); aux sends are 3/4."""
     track['trackAudioSrc']  = src
     track['trackAudioDst1'] = d1
     track['trackAudioDst2'] = d2
     track['trackAudioDst3'] = d3
 
-# Route sub-track 1 MIDI output to ATOM SQ so LED commands reach the hardware
-sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
-sub_tracks[0]['midiDstExtChn'] = -1
-sub_tracks[0].pop('destNode1', None)
-# Regular track bus routing: fader → bus 2 (A Master), sends → 3, 4. Matches
-# every instrument track in the working Building-blocks project.
-set_bus(sub_tracks[0], 0, 2, 3, 4)
-wire_time(sub_tracks[0], my_root_time)
+def wire_time(track, root_time):
+    ins = track.get('inputs')
+    if ins and len(ins) >= 2 and root_time is not None:
+        ins[1] = {'ac': True, 'ace': True, 'opid': root_time, 'tp': 6}
 
-# ── Replace sub-track 2 modules with drum voices ──────────────────────────────
-drum_track = sub_tracks[1]
-drum_track['modules'] = voice_modules
-drum_track['name'] = 'Drums'
-drum_track.pop('destNode1', None)
-set_bus(drum_track, 0, 2, 3, 4)
-wire_time(drum_track, my_root_time)
-drum_track['outputs'] = [
-    {'nm': 'Out',  'pid': 50, 'tp': 0},
-    {'nm': 'MIDI', 'pid': 51, 'tp': 5},
-]
-# Wire the drum mixer's audio output to the sub-track's external output.
-# iinputs.opid tells Drambo which internal module pid provides this rack's audio.
-drum_track['iinputs'] = [
-    {'ac': True, 'ace': True, 'opid': dm_o,     'tp': 0},  # drum bus audio → track Out
-    {'ac': True, 'ace': True, 'opid': MIDI_BUS,  'tp': 5},  # MIDI passthrough
-]
-
-# ── Clone the A / B / Master mixer tracks from the user's Master.drproject ─────
-# These three empty racks complete Drambo's mixer bus graph. Without them the
-# audio buses the instrument tracks feed have no return/summing stage, so nothing
-# reaches the physical output. We clone the user's known-good skeleton (which
-# loads cleanly in Drambo), remap every pid to stay globally unique, repoint the
-# Time tap to our root, and stamp the exact bus numbers the working
-# Building-blocks project uses for its A / B / Master strip.
-SKELETON = REPO / 'Master.drproject'
-with open(SKELETON, 'rb') as f:
-    skel = plistlib.load(f)
-skel_subs = {s.get('name'): s for s in skel['tracks']['modules']}
-skel_time = time_pid(skel['tracks'])   # the skeleton's root Time pid (external ref)
-
-def clone_mixer_track(name, bus):
+def clone_mixer_track(skel_subs, skel_time, name, bus, my_root_time):
     src = copy.deepcopy(skel_subs[name])
-    # Collect every pid this track owns, then map each to a fresh unique pid.
     owned = set()
     def collect(o):
         if isinstance(o, dict):
@@ -421,9 +152,9 @@ def clone_mixer_track(name, bus):
                 o['pid'] = remap[o['pid']]
             if 'opid' in o:
                 if o['opid'] in remap:
-                    o['opid'] = remap[o['opid']]          # internal reference
+                    o['opid'] = remap[o['opid']]
                 elif o['opid'] == skel_time:
-                    o['opid'] = my_root_time               # Time tap → our root
+                    o['opid'] = my_root_time
             for v in o.values():
                 apply(v)
         elif isinstance(o, list):
@@ -434,21 +165,83 @@ def clone_mixer_track(name, bus):
     set_bus(src, *bus)
     return src
 
-track_A      = clone_mixer_track('A',      (2, 2, 4, 0))
-track_B      = clone_mixer_track('B',      (3, 2, 0, 0))
-track_Master = clone_mixer_track('Master', (1, 1, 0, 0))
+
+# ── Assemble the project ─────────────────────────────────────────────────────
+
+with open(TEMPLATE, 'rb') as f:
+    proj = plistlib.load(f)
+proj['projectName'] = 'drum-machine'
+
+tracks    = proj['tracks']
+sub_tracks = tracks.get('modules', [])
+my_root_time = time_pid(tracks)
+
+# ── Inject atom-sq-drums.moz into Mozaic (sub-track 0) ───────────────────────
+def find_au_midi(module_list):
+    for m in module_list:
+        if m.get('class') == 'BSAUMidiModule':
+            return m
+        if 'modules' in m:
+            found = find_au_midi(m['modules'])
+            if found:
+                return found
+    return None
+
+mozaic = find_au_midi(sub_tracks)
+if not mozaic:
+    raise RuntimeError('BSAUMidiModule not found in template')
+
+script_text = SCRIPT.read_text(encoding='utf-8')
+mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
+
+sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
+sub_tracks[0]['midiDstExtChn']  = -1
+sub_tracks[0].pop('destNode1', None)
+set_bus(sub_tracks[0], 0, 2, 3, 4)
+wire_time(sub_tracks[0], my_root_time)
+
+# ── Build drum sub-track (sub-track 1) ───────────────────────────────────────
+drum_track = sub_tracks[1]
+drum_track['name'] = 'Drums'
+drum_track.pop('destNode1', None)
+set_bus(drum_track, 0, 2, 3, 4)
+wire_time(drum_track, my_root_time)
+
+# ioutputs of the drum sub-track — signals available INSIDE the rack.
+drum_audio_in = drum_track['ioutputs'][0]['pid']   # 59  audio
+drum_midi_in  = drum_track['ioutputs'][1]['pid']   # 58  MIDI  (ATOM SQ pads arrive here)
+drum_time_in  = drum_track['ioutputs'][2]['pid']   # 60  Time
+
+# Clone DR Rackula from Building-blocks — the proven, factory-backed drum rack.
+dr_rack, dr_audio_out = clone_dr_rackula(drum_audio_in, drum_midi_in, drum_time_in)
+
+drum_track['modules'] = [dr_rack]
+drum_track['outputs'] = [
+    {'nm': 'Out',  'pid': 50, 'tp': 0},
+    {'nm': 'MIDI', 'pid': 51, 'tp': 5},
+]
+# Route the DR Rackula's audio output to this sub-track's external output.
+drum_track['iinputs'] = [
+    {'ac': True, 'ace': True, 'opid': dr_audio_out, 'tp': 0},
+]
+
+# ── Clone A / B / Master mixer tracks from skeleton ──────────────────────────
+with open(SKELETON, 'rb') as f:
+    skel = plistlib.load(f)
+skel_subs = {s.get('name'): s for s in skel['tracks']['modules']}
+skel_time = time_pid(skel['tracks'])
+
+track_A      = clone_mixer_track(skel_subs, skel_time, 'A',      (2, 2, 4, 0), my_root_time)
+track_B      = clone_mixer_track(skel_subs, skel_time, 'B',      (3, 2, 0, 0), my_root_time)
+track_Master = clone_mixer_track(skel_subs, skel_time, 'Master', (1, 1, 0, 0), my_root_time)
 
 mst_audio_out = track_Master['outputs'][0]['pid']
 mst_midi_out  = track_Master['outputs'][1]['pid']
 
-# LED + Drums, then the full mixer return section.
 tracks['modules'] = sub_tracks[:2] + [track_A, track_B, track_Master]
 
-# Root rack bus routing — final master output is bus 0, matching Building-blocks.
+# Root rack bus routing and final output linkage.
 set_bus(tracks, 0, 0, 0, 0)
-
-# Root iinputs must reference the Master sub-track's output pids so Drambo
-# routes the final mixed audio to the physical outputs.
 tracks['iinputs'] = [
     {'ac': True, 'ace': True, 'opid': mst_audio_out, 'tp': 0},
     {'ac': True, 'ace': True, 'opid': mst_midi_out,  'tp': 5},
