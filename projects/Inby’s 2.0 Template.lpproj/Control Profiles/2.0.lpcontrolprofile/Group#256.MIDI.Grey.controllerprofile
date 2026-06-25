@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Bindings</key>
+	<array>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Adjust Effect Parameter</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Action</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>#664:Filter 1.Cut-Off</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b000</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Adjust Effect Parameter</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Action</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>#664:Filter 1.Q</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b001</string>
+		</dict>
+	</array>
+	<key>Device</key>
+	<string>Group#256</string>
+	<key>Device Name</key>
+	<string>Grey</string>
+	<key>Type</key>
+	<string>MIDI</string>
+</dict>
+</plist>
