@@ -32,8 +32,8 @@ channel 1 (`MIDIChannel = 0`); the touch strip is the exception.
 
 | Control | Type | Number(s) |
 |---|---|---|
-| Pads — lower row (16) | Note | **36–51** |
-| Pads — upper row (16) | Note | **52–67** |
+| Pads — bottom row, left→right (16) | Note | **36–51** |
+| Pads — top row, left→right (16)    | Note | **52–67** |
 | 8 rotary encoders | CC, **relative** | **14–21** |
 | Display/jog encoder | CC, relative | **29** |
 | Soft buttons under screen (6) | CC | **36–41** |
