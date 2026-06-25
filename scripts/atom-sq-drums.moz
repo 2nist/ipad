@@ -24,14 +24,30 @@
   mode = 0
 
   // Core drum colors — index = note - 36, permanent
-  padR[0] = 127 / padG[0] = 0   / padB[0] = 0    // 36 Kick       red
-  padR[1] = 127 / padG[1] = 50  / padB[1] = 0    // 37 Rim        orange
-  padR[2] = 127 / padG[2] = 83  / padB[2] = 3    // 38 Snare      yellow
-  padR[3] = 50  / padG[3] = 127 / padB[3] = 0    // 39 Perc 1     lime
-  padR[4] = 0   / padG[4] = 127 / padB[4] = 100  // 40 Perc 2     cyan-green
-  padR[5] = 0   / padG[5] = 16  / padB[5] = 127  // 41 Open Hat   blue
-  padR[6] = 65  / padG[6] = 0   / padB[6] = 65   // 42 Closed Hat purple
-  padR[7] = 127 / padG[7] = 127 / padB[7] = 127  // 43 Sub Kick   white
+  padR[0] = 127
+  padG[0] = 0
+  padB[0] = 0     // 36 Kick       red
+  padR[1] = 127
+  padG[1] = 50
+  padB[1] = 0     // 37 Rim        orange
+  padR[2] = 127
+  padG[2] = 83
+  padB[2] = 3     // 38 Snare      yellow
+  padR[3] = 50
+  padG[3] = 127
+  padB[3] = 0     // 39 Perc 1     lime
+  padR[4] = 0
+  padG[4] = 127
+  padB[4] = 100   // 40 Perc 2     cyan-green
+  padR[5] = 0
+  padG[5] = 16
+  padB[5] = 127   // 41 Open Hat   blue
+  padR[6] = 65
+  padG[6] = 0
+  padB[6] = 65    // 42 Closed Hat purple
+  padR[7] = 127
+  padG[7] = 127
+  padB[7] = 127   // 43 Sub Kick   white
 
   Call @UpdateAllLEDs
   Call @SetOLED
@@ -42,31 +58,47 @@
 @UpdateAllLEDs
   if mode = 0                  // DRUM: amber extended, teal top row
     for i = 8 to 15
-      padR[i] = 127 / padG[i] = 60 / padB[i] = 0
+      padR[i] = 127
+      padG[i] = 60
+      padB[i] = 0
     endfor
     for i = 16 to 31
-      padR[i] = 0 / padG[i] = 100 / padB[i] = 90
+      padR[i] = 0
+      padG[i] = 100
+      padB[i] = 90
     endfor
   elseif mode = 1              // GLITCH: purple throws, red patterns, orange utils
     for i = 8 to 15
-      padR[i] = 65 / padG[i] = 0 / padB[i] = 65
+      padR[i] = 65
+      padG[i] = 0
+      padB[i] = 65
     endfor
     for i = 16 to 27           // notes 52-63: Effectrix pattern keys
-      padR[i] = 127 / padG[i] = 0 / padB[i] = 30
+      padR[i] = 127
+      padG[i] = 0
+      padB[i] = 30
     endfor
     for i = 28 to 31           // notes 64-67: utilities
-      padR[i] = 127 / padG[i] = 60 / padB[i] = 0
+      padR[i] = 127
+      padG[i] = 60
+      padB[i] = 0
     endfor
   elseif mode = 2              // SAMPLE: all cyan
     for i = 8 to 31
-      padR[i] = 0 / padG[i] = 100 / padB[i] = 127
+      padR[i] = 0
+      padG[i] = 100
+      padB[i] = 127
     endfor
   elseif mode = 3              // SEQ: lime track select, dim green steps
     for i = 8 to 15
-      padR[i] = 50 / padG[i] = 127 / padB[i] = 0
+      padR[i] = 50
+      padG[i] = 127
+      padB[i] = 0
     endfor
     for i = 16 to 31
-      padR[i] = 0 / padG[i] = 30 / padB[i] = 0
+      padR[i] = 0
+      padG[i] = 30
+      padB[i] = 0
     endfor
   endif
 
@@ -84,9 +116,13 @@
   for b = 0 to 7
     ccNum = b
     if b = mode
-      litR = 0 / litG = 127 / litB = 0
+      litR = 0
+      litG = 127
+      litB = 0
     else
-      litR = 0 / litG = 0 / litB = 30
+      litR = 0
+      litG = 0
+      litB = 30
     endif
     Call @LightCCButton
   endfor

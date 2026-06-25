@@ -24,7 +24,6 @@ Usage:
   python3 tools/generate-drum-project.py
 """
 import plistlib
-import base64
 from pathlib import Path
 
 REPO     = Path(__file__).parent.parent
@@ -335,8 +334,7 @@ if not mozaic:
     raise RuntimeError('BSAUMidiModule not found in template')
 
 script_text = SCRIPT.read_text(encoding='utf-8')
-code_b64 = base64.b64encode(script_text.encode('utf-8'))
-mozaic['unitDescription']['fullState']['CODE'] = code_b64
+mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 
 # Route sub-track 1 MIDI output to ATOM SQ so LED commands reach the hardware
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
@@ -348,10 +346,17 @@ sub_tracks[0]['midiDstExtChn'] = -1
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
-# Expose the master mixer output as the sub-track's audio output
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
+]
+# Wire the drum mixer's audio output to the sub-track's audio output.
+# iinputs.opid is how Drambo routes an internal module's output to the rack's
+# external output — it must reference the drum mixer's output pid (dm_o).
+# Without this, synthesized audio is floating and never reaches the track output.
+drum_track['iinputs'] = [
+    {'ac': True, 'ace': True, 'opid': dm_o, 'tp': 0},   # drum bus audio → track out
+    {'ac': True, 'ace': True, 'opid': MIDI_BUS, 'tp': 5}, # MIDI passthrough
 ]
 
 # ── Save ──────────────────────────────────────────────────────────────────────
