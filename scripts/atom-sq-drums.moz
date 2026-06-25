@@ -1,0 +1,187 @@
+// atom-sq-drums.moz   (v1)
+// ATOM SQ LED feedback for drum chain in Drambo.
+//
+// Chain: [Octachron MIDI FX] → [THIS SCRIPT in Mozaic] → [Ruismaker/Koala instrument]
+//
+// CRITICAL RULE: SendMIDIThru is called FIRST in @OnMidiInput so the downstream
+// instrument always gets the note before any LED work is done.
+//
+// LED feedback: pads 36..67 flash green on hit, dim blue on release.
+// OLED: "DRUMS" on track-name segment (6).
+// Touch strip: 25 LED bar follows pitch-bend position.
+
+@OnLoad
+  SetShortName {DRUMS}
+  SendMIDIOut 143, 0, 1        // ATOM SQ native mode ON (NoteOff ch16, n0, v1)
+
+  // All 32 pads dim blue
+  for n = 36 to 67
+    litNote = n
+    litR = 0
+    litG = 0
+    litB = 32
+    Call @LightPad
+  endfor
+
+  // Plus (note 0) green, Minus (note 1) red
+  litNote = 0
+  litR = 0
+  litG = 127
+  litB = 0
+  Call @LightPad
+
+  litNote = 1
+  litR = 127
+  litG = 0
+  litB = 0
+  Call @LightPad
+
+  // Bank buttons A..H (CC 0..7) dim blue
+  for b = 0 to 7
+    ccNum = b
+    litR = 0
+    litG = 0
+    litB = 90
+    Call @LightCCButton
+  endfor
+
+  lastPos = 0 - 1
+  Call @ShowDrums              // OLED: "DRUMS" on segment 6
+@End
+
+
+// ---- light pad `litNote` (note-type RGB) ----
+@LightPad
+  SendMIDINoteOn 1, litNote, litR
+  SendMIDINoteOn 2, litNote, litG
+  SendMIDINoteOn 3, litNote, litB
+  SendMIDINoteOn 0, litNote, 127
+@End
+
+
+// ---- light CC-type RGB button `ccNum` ----
+@LightCCButton
+  SendMIDICC 1, ccNum, litR
+  SendMIDICC 2, ccNum, litG
+  SendMIDICC 3, ccNum, litB
+  SendMIDICC 0, ccNum, 127
+@End
+
+
+@OnMidiInput
+  status = MIDIByte1
+  d1 = MIDIByte2
+  d2 = MIDIByte3
+
+  SendMIDIThru                 // FIRST: instrument must not be starved
+
+  if status >= 248
+    Exit                       // clock/active-sense: already forwarded
+  endif
+
+  // Classify message type
+  kind = 0
+  if status >= 128
+    if status <= 143
+      kind = 2                 // note-off (8n)
+    endif
+  endif
+  if status >= 144
+    if status <= 159
+      if d2 > 0
+        kind = 1               // note-on with velocity
+      else
+        kind = 2               // note-on vel=0 treated as note-off
+      endif
+    endif
+  endif
+  if status >= 176
+    if status <= 191
+      kind = 3                 // CC (Bn)
+    endif
+  endif
+  if status >= 224
+    if status <= 239
+      kind = 4                 // pitch bend (En)
+    endif
+  endif
+
+  // Pad note-on (36..67): flash green
+  if kind = 1
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 127
+        litB = 0
+        Call @LightPad
+      endif
+    endif
+  endif
+
+  // Pad note-off (36..67): return to dim blue
+  if kind = 2
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 0
+        litB = 32
+        Call @LightPad
+      endif
+    endif
+  endif
+
+  // Touch strip: 25 bar LEDs follow pitch-bend MSB
+  if kind = 4
+    pos = d2 * 25 / 128
+    if pos > 24
+      pos = 24
+    endif
+    if pos <> lastPos
+      for c = 55 to 79
+        idx = c - 55
+        if idx <= pos
+          SendMIDICC 0, c, 127
+        else
+          SendMIDICC 0, c, 0
+        endif
+      endfor
+      lastPos = pos
+    endif
+  endif
+@End
+
+
+// ---- write txt[0..txtLen-1] to OLED segment segId ----
+// Mozaic adds F0/F7 — array holds inner bytes only.
+@WriteSeg
+  sx[0] = 0
+  sx[1] = 1
+  sx[2] = 6
+  sx[3] = 34
+  sx[4] = 18
+  sx[5] = segId
+  sx[6] = 0
+  sx[7] = 91
+  sx[8] = 91
+  sx[9] = 1
+  for i = 0 to txtLen - 1
+    sx[10 + i] = txt[i]
+  endfor
+  slen = 10 + txtLen
+  SendSysex sx, slen
+@End
+
+
+// ---- write "DRUMS" to OLED track-name segment ----
+@ShowDrums
+  txt[0] = 68   // D
+  txt[1] = 82   // R
+  txt[2] = 85   // U
+  txt[3] = 77   // M
+  txt[4] = 83   // S
+  txtLen = 5
+  segId = 6
+  Call @WriteSeg
+@End
