@@ -339,7 +339,12 @@ mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 # Route sub-track 1 MIDI output to ATOM SQ so LED commands reach the hardware
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
 sub_tracks[0]['midiDstExtChn'] = -1
-sub_tracks[0].pop('destNode1', None)   # absent = route to Drambo master bus
+sub_tracks[0].pop('destNode1', None)
+# Audio bus routing — required by Drambo; Dst1=2 = A Master, Dst2=3 = A Send, Dst3=4 = B Send
+sub_tracks[0]['trackAudioSrc']  = 0
+sub_tracks[0]['trackAudioDst1'] = 2
+sub_tracks[0]['trackAudioDst2'] = 3
+sub_tracks[0]['trackAudioDst3'] = 4
 
 # ── Replace sub-track 2 modules with drum voices ──────────────────────────────
 # sub_tracks[1] is the second BSDramboRackModule (already wired to Ext.Out 1 or 2).
@@ -347,7 +352,12 @@ sub_tracks[0].pop('destNode1', None)   # absent = route to Drambo master bus
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
-drum_track.pop('destNode1', None)   # absent = route to Drambo master bus
+drum_track.pop('destNode1', None)
+# Audio bus routing — matches every working track in Building-blocks
+drum_track['trackAudioSrc']  = 0
+drum_track['trackAudioDst1'] = 2
+drum_track['trackAudioDst2'] = 3
+drum_track['trackAudioDst3'] = 4
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
@@ -363,6 +373,12 @@ drum_track['iinputs'] = [
 
 # Drop the 6 unused stub tracks that came from the template (only keep LED + Drums)
 tracks['modules'] = sub_tracks[:2]
+
+# Root rack audio bus routing — Dst=0 = final master output
+tracks['trackAudioSrc']  = 0
+tracks['trackAudioDst1'] = 0
+tracks['trackAudioDst2'] = 0
+tracks['trackAudioDst3'] = 0
 
 # The root rack's iinputs tells Drambo which sub-track audio/MIDI to route to
 # the master bus. The template had opid=176/177 (the old 8th sub-track outputs).
