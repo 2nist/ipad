@@ -222,35 +222,41 @@ if not mozaic:
 script_text = SCRIPT.read_text(encoding='utf-8')
 mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 
+sub_tracks[0]['name'] = 'Drums+LED'
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
 sub_tracks[0]['midiDstExtChn']  = -1
 sub_tracks[0].pop('destNode1', None)
 set_bus(sub_tracks[0], 0, 2, 3, 4)
 wire_time(sub_tracks[0], my_root_time)
 
-# ── Build drum sub-track (sub-track 1) ───────────────────────────────────────
-drum_track = sub_tracks[1]
-drum_track['name'] = 'Drums'
-drum_track.pop('destNode1', None)
-set_bus(drum_track, 0, 2, 3, 4)
-wire_time(drum_track, my_root_time)
+# This single sub-track handles BOTH LED feedback and drum synthesis.
+# Putting them together guarantees both modules see the same external MIDI —
+# Drambo only delivers external MIDI to one sub-track at a time (the focused
+# one), so splitting them across two tracks meant the LED track was silent.
+#
+# Signal flow inside this sub-track:
+#   external MIDI (ATOM SQ pads) ──┬─→ Mozaic (@OnMidiInput) ──→ LED NoteOns ──→ ATOM SQ
+#                                  └─→ DR Rackula (voices)   ──→ audio out
 
-# ioutputs of the drum sub-track — signals available INSIDE the rack.
-drum_audio_in = drum_track['ioutputs'][0]['pid']   # 59  audio
-drum_midi_in  = drum_track['ioutputs'][1]['pid']   # 58  MIDI  (ATOM SQ pads arrive here)
-drum_time_in  = drum_track['ioutputs'][2]['pid']   # 60  Time
+# ioutputs of this sub-track — signals available to modules inside.
+led_audio_in = sub_tracks[0]['ioutputs'][0]['pid']   # 38  audio in (unused, no audio source)
+led_midi_in  = sub_tracks[0]['ioutputs'][1]['pid']   # 33  MIDI  ← ATOM SQ pad notes arrive here
+led_time_in  = sub_tracks[0]['ioutputs'][2]['pid']   # 39  Time
 
-# Clone DR Rackula from Building-blocks — the proven, factory-backed drum rack.
-dr_rack, dr_audio_out = clone_dr_rackula(drum_audio_in, drum_midi_in, drum_time_in)
+# Mozaic is already in this sub-track (BSAUMidiModule, reads from led_midi_in=33,
+# outputs MIDI OUT on pid=36). Its output is already wired to the sub-track's
+# iinputs MIDI so it flows to midiDstExtPort='ATOM SQ'. No changes needed there.
 
-drum_track['modules'] = [dr_rack]
-drum_track['outputs'] = [
-    {'nm': 'Out',  'pid': 50, 'tp': 0},
-    {'nm': 'MIDI', 'pid': 51, 'tp': 5},
-]
-# Route the DR Rackula's audio output to this sub-track's external output.
-drum_track['iinputs'] = [
-    {'ac': True, 'ace': True, 'opid': dr_audio_out, 'tp': 0},
+# Add DR Rackula alongside Mozaic. Both read from the same MIDI bus (led_midi_in).
+dr_rack, dr_audio_out = clone_dr_rackula(led_audio_in, led_midi_in, led_time_in)
+sub_tracks[0]['modules'].append(dr_rack)
+
+# Route DR Rackula's audio to this sub-track's audio output.
+# Keep Mozaic's MIDI OUT (pid=36) on the MIDI slot — unchanged from template.
+mozaic_midi_out = sub_tracks[0]['iinputs'][1]['opid']  # pid=36
+sub_tracks[0]['iinputs'] = [
+    {'ac': True, 'ace': True, 'opid': dr_audio_out,    'tp': 0},   # drum audio → track Out
+    {'ac': True, 'ace': True, 'opid': mozaic_midi_out, 'tp': 5},   # Mozaic MIDI → ATOM SQ
 ]
 
 # ── Clone A / B / Master mixer tracks from skeleton ──────────────────────────
@@ -266,7 +272,8 @@ track_Master = clone_mixer_track(skel_subs, skel_time, 'Master', (1, 1, 0, 0), m
 mst_audio_out = track_Master['outputs'][0]['pid']
 mst_midi_out  = track_Master['outputs'][1]['pid']
 
-tracks['modules'] = sub_tracks[:2] + [track_A, track_B, track_Master]
+# One combined sub-track + A/B/Master.
+tracks['modules'] = [sub_tracks[0], track_A, track_B, track_Master]
 
 # Root rack bus routing and final output linkage.
 set_bus(tracks, 0, 0, 0, 0)
