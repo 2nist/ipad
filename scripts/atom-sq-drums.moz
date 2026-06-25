@@ -1,15 +1,14 @@
 // atom-sq-drums.moz   (v1)
 // ATOM SQ LED feedback for drum chain in Drambo.
 //
-// Drambo routing: place on a dedicated LED Control track (no instrument).
-//   Track MIDI Input Module  = Drum Track (sees Octachron patterns)
-//   Track MIDI Output External = ATOM SQ Controller (LED feedback to hardware)
-//   Rack: just Mozaic — no instrument after it.
+// Drambo routing: place on the drum track between Octachron and Ruismaker.
+//   Track MIDI Output External = ATOM SQ Controller
+//   This mirrors all MIDI (including LED NoteOns) back to the hardware
+//   while SendMIDIThru keeps the notes flowing forward to Ruismaker.
 //
 // LED feedback: pads 36..67 flash green on hit, dim blue on release.
 // OLED: "DRUMS" on track-name segment (6).
 // Touch strip: 25 LED bar follows pitch-bend position.
-// No SendMIDIThru — this track has no downstream instrument.
 
 @OnLoad
   SetShortName {DRUMS}
@@ -74,8 +73,10 @@
   d1 = MIDIByte2
   d2 = MIDIByte3
 
+  SendMIDIThru                 // always forward to Ruismaker first
+
   if status >= 248
-    Exit                       // clock/active-sense: nothing to do
+    Exit                       // clock/active-sense: already forwarded
   endif
 
   // Classify message type
