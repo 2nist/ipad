@@ -364,6 +364,17 @@ drum_track['iinputs'] = [
 # Drop the 6 unused stub tracks that came from the template (only keep LED + Drums)
 tracks['modules'] = sub_tracks[:2]
 
+# The root rack's iinputs tells Drambo which sub-track audio/MIDI to route to
+# the master bus. The template had opid=176/177 (the old 8th sub-track outputs).
+# After truncating to 2 sub-tracks, we must update it to the drum track's output pids.
+drum_audio_pid = drum_track['outputs'][0]['pid']  # 50
+drum_midi_pid  = drum_track['outputs'][1]['pid']  # 51
+tracks['iinputs'] = [
+    {'ac': True, 'ace': True, 'opid': drum_audio_pid, 'tp': 0},
+    {'ac': True, 'ace': True, 'opid': drum_midi_pid,  'tp': 5},
+    {'ac': True, 'ace': True, 'opid': drum_audio_pid, 'tp': 0},
+]
+
 # ── Save ──────────────────────────────────────────────────────────────────────
 OUTPUT.parent.mkdir(exist_ok=True)
 with open(OUTPUT, 'wb') as f:
