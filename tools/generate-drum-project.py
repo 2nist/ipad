@@ -23,6 +23,7 @@ Drum voices:
 Usage:
   python3 tools/generate-drum-project.py
 """
+import copy
 import plistlib
 from pathlib import Path
 
@@ -309,39 +310,6 @@ voice_outs.append(sk_o)
 dm, dm_o = drum_mixer(voice_outs)
 voice_modules.append(dm)
 
-# ── Master sub-track pids (pass-through, required by Drambo) ─────────────────
-# Drambo requires a sub-track named 'Master'. It is an empty pass-through rack:
-# ioutputs.pid = 'Audio in' signal (summed bus from all other sub-tracks)
-# iinputs.opid = same pid — routes that bus straight to the rack's external output.
-# Without this track, Drambo cannot route audio to the physical output.
-mst_audio_in  = npid()   # ioutputs 'Audio in' pid (also iinputs opid)
-mst_midi_in   = npid()   # ioutputs 'MIDI' pid (also iinputs opid)
-mst_time      = npid()   # ioutputs 'Time' pid
-mst_audio_out = npid()   # outputs 'Out' pid → referenced by root iinputs
-mst_midi_out  = npid()   # outputs 'MIDI' pid → referenced by root iinputs
-mst_pid       = npid()   # sub-track pid
-
-master_track = {
-    'class': 'BSDramboRackModule',
-    'pid': mst_pid,
-    'name': 'Master',
-    'type': 0,
-    'midiSrcExtPort': 'All',
-    'iinputs': [
-        {'ac': True, 'ace': True, 'opid': mst_audio_in, 'tp': 0},
-        {'ac': True, 'ace': True, 'opid': mst_midi_in,  'tp': 5},
-    ],
-    'ioutputs': [
-        {'pid': mst_audio_in, 'nm': 'Audio in', 'tp': 0},
-        {'pid': mst_midi_in,  'nm': 'MIDI',     'tp': 5},
-        {'pid': mst_time,     'nm': 'Time',     'tp': 6},
-    ],
-    'outputs': [
-        {'nm': 'Out',  'pid': mst_audio_out, 'tp': 0},
-        {'nm': 'MIDI', 'pid': mst_midi_out,  'tp': 5},
-    ],
-}
-
 # ── Assemble the project ─────────────────────────────────────────────────────
 with open(TEMPLATE, 'rb') as f:
     proj = plistlib.load(f)
@@ -350,6 +318,15 @@ proj['projectName'] = 'drum-machine'
 
 tracks = proj['tracks']
 sub_tracks = tracks.get('modules', [])
+
+# Find the root rack's 'Time' ioutput pid — every sub-track taps it on inputs[1].
+def time_pid(rack):
+    for io in rack.get('ioutputs', []):
+        if io.get('nm') == 'Time':
+            return io['pid']
+    return None
+
+my_root_time = time_pid(tracks)
 
 # ── Inject atom-sq-drums.moz script into Mozaic (sub-track 1) ────────────────
 def find_au_midi(module_list):
@@ -369,23 +346,36 @@ if not mozaic:
 script_text = SCRIPT.read_text(encoding='utf-8')
 mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 
+def wire_time(track, root_time):
+    """Tap the root rack's Time signal on inputs[1], like every working track does."""
+    ins = track.get('inputs')
+    if ins and len(ins) >= 2 and root_time is not None:
+        ins[1] = {'ac': True, 'ace': True, 'opid': root_time, 'tp': 6}
+
+def set_bus(track, src, d1, d2, d3):
+    """Audio bus routing — the values Drambo uses to flow audio between tracks.
+    Mix tracks send their fader output to bus 2 ('A Master'); aux sends are 3/4."""
+    track['trackAudioSrc']  = src
+    track['trackAudioDst1'] = d1
+    track['trackAudioDst2'] = d2
+    track['trackAudioDst3'] = d3
+
 # Route sub-track 1 MIDI output to ATOM SQ so LED commands reach the hardware
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
 sub_tracks[0]['midiDstExtChn'] = -1
 sub_tracks[0].pop('destNode1', None)
-# Remove any trackAudioDst fields the template may carry — Master.drproject shows
-# these must be absent (None) for default A-Master bus routing to work.
-for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
-    sub_tracks[0].pop(k, None)
+# Regular track bus routing: fader → bus 2 (A Master), sends → 3, 4. Matches
+# every instrument track in the working Building-blocks project.
+set_bus(sub_tracks[0], 0, 2, 3, 4)
+wire_time(sub_tracks[0], my_root_time)
 
 # ── Replace sub-track 2 modules with drum voices ──────────────────────────────
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
 drum_track.pop('destNode1', None)
-# Remove any stale bus-routing fields from the template.
-for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
-    drum_track.pop(k, None)
+set_bus(drum_track, 0, 2, 3, 4)
+wire_time(drum_track, my_root_time)
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
@@ -397,12 +387,65 @@ drum_track['iinputs'] = [
     {'ac': True, 'ace': True, 'opid': MIDI_BUS,  'tp': 5},  # MIDI passthrough
 ]
 
-# Keep LED track + Drums, append the required Master pass-through track.
-tracks['modules'] = sub_tracks[:2] + [master_track]
+# ── Clone the A / B / Master mixer tracks from the user's Master.drproject ─────
+# These three empty racks complete Drambo's mixer bus graph. Without them the
+# audio buses the instrument tracks feed have no return/summing stage, so nothing
+# reaches the physical output. We clone the user's known-good skeleton (which
+# loads cleanly in Drambo), remap every pid to stay globally unique, repoint the
+# Time tap to our root, and stamp the exact bus numbers the working
+# Building-blocks project uses for its A / B / Master strip.
+SKELETON = REPO / 'Master.drproject'
+with open(SKELETON, 'rb') as f:
+    skel = plistlib.load(f)
+skel_subs = {s.get('name'): s for s in skel['tracks']['modules']}
+skel_time = time_pid(skel['tracks'])   # the skeleton's root Time pid (external ref)
 
-# Remove stale bus-routing fields from the root rack too.
-for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
-    tracks.pop(k, None)
+def clone_mixer_track(name, bus):
+    src = copy.deepcopy(skel_subs[name])
+    # Collect every pid this track owns, then map each to a fresh unique pid.
+    owned = set()
+    def collect(o):
+        if isinstance(o, dict):
+            if isinstance(o.get('pid'), int):
+                owned.add(o['pid'])
+            for v in o.values():
+                collect(v)
+        elif isinstance(o, list):
+            for v in o:
+                collect(v)
+    collect(src)
+    remap = {pid: npid() for pid in sorted(owned)}
+    def apply(o):
+        if isinstance(o, dict):
+            if o.get('pid') in remap:
+                o['pid'] = remap[o['pid']]
+            if 'opid' in o:
+                if o['opid'] in remap:
+                    o['opid'] = remap[o['opid']]          # internal reference
+                elif o['opid'] == skel_time:
+                    o['opid'] = my_root_time               # Time tap → our root
+            for v in o.values():
+                apply(v)
+        elif isinstance(o, list):
+            for v in o:
+                apply(v)
+    apply(src)
+    src['name'] = name
+    set_bus(src, *bus)
+    return src
+
+track_A      = clone_mixer_track('A',      (2, 2, 4, 0))
+track_B      = clone_mixer_track('B',      (3, 2, 0, 0))
+track_Master = clone_mixer_track('Master', (1, 1, 0, 0))
+
+mst_audio_out = track_Master['outputs'][0]['pid']
+mst_midi_out  = track_Master['outputs'][1]['pid']
+
+# LED + Drums, then the full mixer return section.
+tracks['modules'] = sub_tracks[:2] + [track_A, track_B, track_Master]
+
+# Root rack bus routing — final master output is bus 0, matching Building-blocks.
+set_bus(tracks, 0, 0, 0, 0)
 
 # Root iinputs must reference the Master sub-track's output pids so Drambo
 # routes the final mixed audio to the physical outputs.
