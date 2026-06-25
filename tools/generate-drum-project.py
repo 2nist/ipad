@@ -346,6 +346,7 @@ sub_tracks[0]['midiDstExtChn'] = -1
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
+drum_track['destNode1'] = 'Ext.Out 1'   # main stereo output
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
@@ -355,9 +356,12 @@ drum_track['outputs'] = [
 # external output — it must reference the drum mixer's output pid (dm_o).
 # Without this, synthesized audio is floating and never reaches the track output.
 drum_track['iinputs'] = [
-    {'ac': True, 'ace': True, 'opid': dm_o, 'tp': 0},   # drum bus audio → track out
+    {'ac': True, 'ace': True, 'opid': dm_o, 'tp': 0},    # drum bus audio → track out
     {'ac': True, 'ace': True, 'opid': MIDI_BUS, 'tp': 5}, # MIDI passthrough
 ]
+
+# Drop the 6 unused stub tracks that came from the template (only keep LED + Drums)
+tracks['modules'] = sub_tracks[:2]
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 OUTPUT.parent.mkdir(exist_ok=True)
