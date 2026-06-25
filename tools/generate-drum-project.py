@@ -309,6 +309,39 @@ voice_outs.append(sk_o)
 dm, dm_o = drum_mixer(voice_outs)
 voice_modules.append(dm)
 
+# ── Master sub-track pids (pass-through, required by Drambo) ─────────────────
+# Drambo requires a sub-track named 'Master'. It is an empty pass-through rack:
+# ioutputs.pid = 'Audio in' signal (summed bus from all other sub-tracks)
+# iinputs.opid = same pid — routes that bus straight to the rack's external output.
+# Without this track, Drambo cannot route audio to the physical output.
+mst_audio_in  = npid()   # ioutputs 'Audio in' pid (also iinputs opid)
+mst_midi_in   = npid()   # ioutputs 'MIDI' pid (also iinputs opid)
+mst_time      = npid()   # ioutputs 'Time' pid
+mst_audio_out = npid()   # outputs 'Out' pid → referenced by root iinputs
+mst_midi_out  = npid()   # outputs 'MIDI' pid → referenced by root iinputs
+mst_pid       = npid()   # sub-track pid
+
+master_track = {
+    'class': 'BSDramboRackModule',
+    'pid': mst_pid,
+    'name': 'Master',
+    'type': 0,
+    'midiSrcExtPort': 'All',
+    'iinputs': [
+        {'ac': True, 'ace': True, 'opid': mst_audio_in, 'tp': 0},
+        {'ac': True, 'ace': True, 'opid': mst_midi_in,  'tp': 5},
+    ],
+    'ioutputs': [
+        {'pid': mst_audio_in, 'nm': 'Audio in', 'tp': 0},
+        {'pid': mst_midi_in,  'nm': 'MIDI',     'tp': 5},
+        {'pid': mst_time,     'nm': 'Time',     'tp': 6},
+    ],
+    'outputs': [
+        {'nm': 'Out',  'pid': mst_audio_out, 'tp': 0},
+        {'nm': 'MIDI', 'pid': mst_midi_out,  'tp': 5},
+    ],
+}
+
 # ── Assemble the project ─────────────────────────────────────────────────────
 with open(TEMPLATE, 'rb') as f:
     proj = plistlib.load(f)
@@ -340,55 +373,43 @@ mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
 sub_tracks[0]['midiDstExtChn'] = -1
 sub_tracks[0].pop('destNode1', None)
-# Audio bus routing — required by Drambo; Dst1=2 = A Master, Dst2=3 = A Send, Dst3=4 = B Send
-sub_tracks[0]['trackAudioSrc']  = 0
-sub_tracks[0]['trackAudioDst1'] = 2
-sub_tracks[0]['trackAudioDst2'] = 3
-sub_tracks[0]['trackAudioDst3'] = 4
+# Remove any trackAudioDst fields the template may carry — Master.drproject shows
+# these must be absent (None) for default A-Master bus routing to work.
+for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
+    sub_tracks[0].pop(k, None)
 
 # ── Replace sub-track 2 modules with drum voices ──────────────────────────────
-# sub_tracks[1] is the second BSDramboRackModule (already wired to Ext.Out 1 or 2).
-# Its iinputs assign opid=58 for incoming MIDI — our BSMidiFilterModules use that.
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
 drum_track.pop('destNode1', None)
-# Audio bus routing — matches every working track in Building-blocks
-drum_track['trackAudioSrc']  = 0
-drum_track['trackAudioDst1'] = 2
-drum_track['trackAudioDst2'] = 3
-drum_track['trackAudioDst3'] = 4
+# Remove any stale bus-routing fields from the template.
+for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
+    drum_track.pop(k, None)
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
 ]
-# Wire the drum mixer's audio output to the sub-track's audio output.
-# iinputs.opid is how Drambo routes an internal module's output to the rack's
-# external output — it must reference the drum mixer's output pid (dm_o).
-# Without this, synthesized audio is floating and never reaches the track output.
+# Wire the drum mixer's audio output to the sub-track's external output.
+# iinputs.opid tells Drambo which internal module pid provides this rack's audio.
 drum_track['iinputs'] = [
-    {'ac': True, 'ace': True, 'opid': dm_o, 'tp': 0},    # drum bus audio → track out
-    {'ac': True, 'ace': True, 'opid': MIDI_BUS, 'tp': 5}, # MIDI passthrough
+    {'ac': True, 'ace': True, 'opid': dm_o,     'tp': 0},  # drum bus audio → track Out
+    {'ac': True, 'ace': True, 'opid': MIDI_BUS,  'tp': 5},  # MIDI passthrough
 ]
 
-# Drop the 6 unused stub tracks that came from the template (only keep LED + Drums)
-tracks['modules'] = sub_tracks[:2]
+# Keep LED track + Drums, append the required Master pass-through track.
+tracks['modules'] = sub_tracks[:2] + [master_track]
 
-# Root rack audio bus routing — Dst=0 = final master output
-tracks['trackAudioSrc']  = 0
-tracks['trackAudioDst1'] = 0
-tracks['trackAudioDst2'] = 0
-tracks['trackAudioDst3'] = 0
+# Remove stale bus-routing fields from the root rack too.
+for k in ('trackAudioSrc', 'trackAudioDst1', 'trackAudioDst2', 'trackAudioDst3'):
+    tracks.pop(k, None)
 
-# The root rack's iinputs tells Drambo which sub-track audio/MIDI to route to
-# the master bus. The template had opid=176/177 (the old 8th sub-track outputs).
-# After truncating to 2 sub-tracks, we must update it to the drum track's output pids.
-drum_audio_pid = drum_track['outputs'][0]['pid']  # 50
-drum_midi_pid  = drum_track['outputs'][1]['pid']  # 51
+# Root iinputs must reference the Master sub-track's output pids so Drambo
+# routes the final mixed audio to the physical outputs.
 tracks['iinputs'] = [
-    {'ac': True, 'ace': True, 'opid': drum_audio_pid, 'tp': 0},
-    {'ac': True, 'ace': True, 'opid': drum_midi_pid,  'tp': 5},
-    {'ac': True, 'ace': True, 'opid': drum_audio_pid, 'tp': 0},
+    {'ac': True, 'ace': True, 'opid': mst_audio_out, 'tp': 0},
+    {'ac': True, 'ace': True, 'opid': mst_midi_out,  'tp': 5},
+    {'ac': True, 'ace': True, 'opid': mst_audio_out, 'tp': 0},
 ]
 
 # ── Save ──────────────────────────────────────────────────────────────────────
