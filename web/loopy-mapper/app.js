@@ -12,14 +12,19 @@ const ACTIVE_PROFILE_DIR = "Control Profile.lpcontrolprofile";
 // it in sync as a convenience for users who later switch profiles by name.
 const LIBRARY_PROFILE_DIR = "Control Profiles/Drums.lpcontrolprofile";
 
-// Files copied verbatim from the template. The generated device profile is NOT
-// listed here — it is written into both profile folders in exportProject().
+// The foot-controller profile is a fixed device (CC20-23 ch1 -> loop tracks 8-11).
+// It is fetched from the template and, like the generated pad profile, written into
+// BOTH the active folder (so the pedals work on import) and the library folder.
+const FOOTCTRL_PROFILE_FILE = "FootCtrl Bluetooth.MIDI.FootCtrl Bluetooth.controllerprofile";
+
+// Files copied verbatim from the template into a single destination. The generated
+// pad profile and the foot-controller profile are NOT listed here — they are
+// written into both profile folders in exportProject().
 const TEMPLATE_FILES = [
   "Info.plist",
   "Project.sqlite",
   "Resources.plist",
-  `${ACTIVE_PROFILE_DIR}/Internal.Internal.controllerprofile`,
-  `${LIBRARY_PROFILE_DIR}/mVave Chocolate.MIDI.Chocolate.controllerprofile`
+  `${ACTIVE_PROFILE_DIR}/Internal.Internal.controllerprofile`
 ];
 
 const ALLOWED_ACTIONS = new Set([
@@ -33,8 +38,8 @@ const ALLOWED_ACTIONS = new Set([
 const DEFAULT_YAML = `project:
   name: Generated Loopy Mapping
 device:
-  name: ATOM SQ
-  display_name: ATOM SQ
+  name: ATM SQ
+  display_name: ATM SQ
   type: MIDI
 
 bindings:
@@ -344,7 +349,7 @@ async function exportProfile() {
   if (result.errors.length > 0) return;
 
   const xml = generateControllerProfile(result.config, result.bindings);
-  const deviceName = sanitizeFilePart(result.config.device && result.config.device.name || "ATOM SQ");
+  const deviceName = sanitizeFilePart(result.config.device && result.config.device.name || "ATM SQ");
   downloadBlob(new Blob([xml], { type: "application/xml" }), `${deviceName}.MIDI.${deviceName}.controllerprofile`);
   setStatus("Profile exported");
 }
@@ -359,9 +364,10 @@ async function exportProject() {
     const projectName = sanitizeFilePart(result.config.project && result.config.project.name || "Generated Loopy Mapping");
     const root = `${projectName}.lpproj`;
     const profileXml = generateControllerProfile(result.config, result.bindings);
-    const deviceName = sanitizeFilePart(result.config.device && result.config.device.name || "ATOM SQ");
+    const deviceName = sanitizeFilePart(result.config.device && result.config.device.name || "ATM SQ");
     const profileFileName = `${deviceName}.MIDI.${deviceName}.controllerprofile`;
     const profileBytes = new TextEncoder().encode(profileXml);
+    const footCtrlBytes = await fetchTemplateFile(`${LIBRARY_PROFILE_DIR}/${FOOTCTRL_PROFILE_FILE}`);
     const files = [];
 
     // Copy the static template files verbatim.
@@ -372,15 +378,14 @@ async function exportProject() {
       });
     }
 
-    // Write the generated device profile into the ACTIVE profile folder so the
-    // mappings actually attach on import, plus the named library folder to keep
-    // the "Drums" profile in sync. (Previously it only went to the inactive
-    // library folder, which is why imported mappings never took effect.)
+    // Write the generated pad profile AND the foot-controller profile into the
+    // ACTIVE profile folder so both devices attach on import, plus the named
+    // library folder to keep the "Drums" profile in sync. (The pad profile
+    // previously only went to the inactive library folder, which is why imported
+    // mappings never took effect.)
     for (const dir of [ACTIVE_PROFILE_DIR, LIBRARY_PROFILE_DIR]) {
-      files.push({
-        name: `${root}/${dir}/${profileFileName}`,
-        data: profileBytes
-      });
+      files.push({ name: `${root}/${dir}/${profileFileName}`, data: profileBytes });
+      files.push({ name: `${root}/${dir}/${FOOTCTRL_PROFILE_FILE}`, data: footCtrlBytes });
     }
 
     const zip = createZip(files);
@@ -403,7 +408,7 @@ async function fetchTemplateFile(relativePath) {
 
 function generateControllerProfile(config, bindings) {
   const device = config.device || {};
-  const deviceName = device.name || "ATOM SQ";
+  const deviceName = device.name || "ATM SQ";
   const displayName = device.display_name || deviceName;
   const type = device.type || "MIDI";
   const lines = [

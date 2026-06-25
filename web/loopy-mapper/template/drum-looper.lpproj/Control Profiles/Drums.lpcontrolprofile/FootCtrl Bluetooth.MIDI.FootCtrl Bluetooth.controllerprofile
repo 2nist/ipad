@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  FootCtrl Bluetooth foot switch bindings: CC 20-23 on MIDI ch 1.
+	  Trigger format: b<channel_0indexed><cc_decimal_2digit> — b020 = ch1 CC20.
+	  Each pedal controls one loop track (tracks 8-11 in scene, 0-indexed).
+	  "recordTracksIfEmpty": true in project settings means pressing Play/Stop on an
+	  empty loop track starts recording; pressing again ends record and starts looping.
+	-->
+	<key>Bindings</key>
+	<array>
+		<!-- CC 20 = pedal 1 → Loop 1 record/play/stop (track index 8) -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>8</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b020</string>
+		</dict>
+		<!-- CC 21 = pedal 2 → Loop 2 record/play/stop (track index 9) -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>9</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b021</string>
+		</dict>
+		<!-- CC 22 = pedal 3 → Loop 3 record/play/stop (track index 10) -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>10</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b022</string>
+		</dict>
+		<!-- CC 23 = pedal 4 → Loop 4 record/play/stop (track index 11) -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>11</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>b023</string>
+		</dict>
+	</array>
+	<key>Device</key>
+	<string>FootCtrl Bluetooth</string>
+	<key>Device Name</key>
+	<string>FootCtrl Bluetooth</string>
+	<key>Type</key>
+	<string>MIDI</string>
+</dict>
+</plist>

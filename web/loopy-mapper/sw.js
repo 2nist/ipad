@@ -1,4 +1,4 @@
-const CACHE_NAME = "loopy-mapper-v2";
+const CACHE_NAME = "loopy-mapper-v3";
 
 const ASSETS = [
   "./",
@@ -10,8 +10,7 @@ const ASSETS = [
   "./template/drum-looper.lpproj/Project.sqlite",
   "./template/drum-looper.lpproj/Resources.plist",
   "./template/drum-looper.lpproj/Control%20Profile.lpcontrolprofile/Internal.Internal.controllerprofile",
-  "./template/drum-looper.lpproj/Control%20Profiles/Drums.lpcontrolprofile/ATOM%20SQ.MIDI.ATOM%20SQ.controllerprofile",
-  "./template/drum-looper.lpproj/Control%20Profiles/Drums.lpcontrolprofile/mVave%20Chocolate.MIDI.Chocolate.controllerprofile"
+  "./template/drum-looper.lpproj/Control%20Profiles/Drums.lpcontrolprofile/FootCtrl%20Bluetooth.MIDI.FootCtrl%20Bluetooth.controllerprofile"
 ];
 
 self.addEventListener("install", (event) => {

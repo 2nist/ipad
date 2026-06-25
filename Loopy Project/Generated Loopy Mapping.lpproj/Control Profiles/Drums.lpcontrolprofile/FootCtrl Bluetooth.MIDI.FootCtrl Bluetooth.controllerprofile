@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<!--
-	  mVave Chocolate foot switch bindings: CC 20-23 on MIDI ch 1.
+	  FootCtrl Bluetooth foot switch bindings: CC 20-23 on MIDI ch 1.
 	  Trigger format: b<channel_0indexed><cc_decimal_2digit> — b020 = ch1 CC20.
 	  Each pedal controls one loop track (tracks 8-11 in scene, 0-indexed).
 	  "recordTracksIfEmpty": true in project settings means pressing Play/Stop on an
@@ -85,9 +85,9 @@
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>mVave Chocolate</string>
+	<string>FootCtrl Bluetooth</string>
 	<key>Device Name</key>
-	<string>Chocolate</string>
+	<string>FootCtrl Bluetooth</string>
 	<key>Type</key>
 	<string>MIDI</string>
 </dict>

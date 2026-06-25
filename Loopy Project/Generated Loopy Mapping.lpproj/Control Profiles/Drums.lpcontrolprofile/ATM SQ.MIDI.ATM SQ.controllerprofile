@@ -150,9 +150,9 @@
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>ATOM SQ</string>
+	<string>ATM SQ</string>
 	<key>Device Name</key>
-	<string>ATOM SQ</string>
+	<string>ATM SQ</string>
 	<key>Type</key>
 	<string>MIDI</string>
 </dict>
