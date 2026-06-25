@@ -100,15 +100,43 @@ def clone_dr_rackula(our_audio_in, our_midi_in, our_time_in):
         if old in ext_map:
             inp['opid'] = ext_map[old]
 
-    # Widen the outer MIDI note-range filter from 48-119 to 0-127 so that ATOM
-    # SQ pads (notes 36-43) are not blocked before reaching the drum voices.
-    for m in rack.get('modules', []):
-        if m.get('class') == 'BSMidiFilterModule':
-            params = m.get('params', [])
-            if len(params) >= 3:
-                params[1]['v'] = 0.0    # minNote  (was 48.0)
-                params[2]['v'] = 127.0  # maxNote
-            break
+    # Remap all note filters to our 8 ATOM SQ pads (36-43).
+    # Factory defaults used notes 48-54 — none of our pads would trigger.
+    #
+    # Voice layout:
+    #   36-37  Kick + Rim  → Simple kick   (Kick keys)
+    #   38-39  Snare + P1  → Simple snare  (Snare keys)
+    #   40     Perc 2      → Hat 1
+    #   41     Open Hat    → Hat 2
+    #   42-43  ClsHat+Sub  → Hat 3
+    #
+    # Outer filter: 36-43 (was 48-119)
+    # Inner voice filters patched by name.
+    note_map = {
+        'Instrument key range': (36, 43),
+        'Kick keys':            (36, 37),
+        'Snare keys':           (38, 39),
+        'Hat 1 keys':           (40, 40),
+        'Hat 2 keys':           (41, 41),
+        'Hat 3 keys':           (42, 43),
+    }
+
+    def patch_filters(obj):
+        if isinstance(obj, dict):
+            if obj.get('class') == 'BSMidiFilterModule':
+                nm = obj.get('name', '')
+                if nm in note_map:
+                    p = obj.get('params', [])
+                    if len(p) >= 3:
+                        p[1]['v'] = float(note_map[nm][0])
+                        p[2]['v'] = float(note_map[nm][1])
+            for v in obj.values():
+                patch_filters(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                patch_filters(v)
+
+    patch_filters(rack)
 
     return rack, new_audio_out
 
