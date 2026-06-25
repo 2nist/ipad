@@ -46,7 +46,35 @@ scripts and you load them into your AU host (AUM, Drambo, apeMatrix, Loopy Pro, 
 | [scripts/arpeggiator.moz](scripts/arpeggiator.moz) | Host-synced arpeggiator (press Play in your host) |
 | [scripts/atom-sq-template.moz](scripts/atom-sq-template.moz) | ATOM SQ starter: native mode, lit pads, logs all controls, OLED |
 | [scripts/atom-sq-mapper.moz](scripts/atom-sq-mapper.moz) | ATOM SQ diagnostic: logs every incoming MIDI byte to map controls |
+| [scripts/atom-sq-template-thru.moz](scripts/atom-sq-template-thru.moz) | ATOM SQ template with MIDI passthrough — pads trigger Drambo sounds |
+| [tools/generate-atomsq-project.py](tools/generate-atomsq-project.py) | Drambo project generator: Mozaic + Flexi sampler + mixer |
+| [projects/atom-sq-template.drproject](projects/atom-sq-template.drproject) | Generated Drambo project (load on iPad) |
 | [scripts/README.md](scripts/README.md) | How to load a script into Mozaic, script-by-script notes |
+
+## ATOM SQ × Drambo workflow
+
+The generated `projects/atom-sq-template.drproject` ties the ATOM SQ hardware into
+Drambo with a single sub-track that holds both Mozaic and a Flexi sampler:
+
+```
+ATOM SQ pads ──┬─→ Mozaic (@OnMidiInput) ──→ LED NoteOns ──→ ATOM SQ
+                │    SendMIDIThru
+                └─→ Flexi sampler (BoomBap+) ──→ audio → Master → device
+```
+
+- **Bottom row pads (notes 36–51)** trigger drum sounds from the `3sleeves_BoomBap+`
+  preset (16 slices). Top row pads (52–67) light up but don't play sounds yet.
+- **Encoders, touch strip, and buttons** are logged by Mozaic for diagnostic coverage.
+- **Mixer tracks A, B, Master** give you level control over the sampler audio.
+
+To regenerate the project after editing the Mozaic script or tweaking sampler settings:
+```
+python tools/generate-atomsq-project.py
+```
+
+Preset path and note range are configurable constants at the top of the generator
+script — swap `BUILDING_TRACK_INDEX`, `NOTE_LO`, and `NOTE_HI` to use a different
+Building-blocks preset or expand to all 32 pads.
 
 ## First run
 

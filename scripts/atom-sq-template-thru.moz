@@ -1,0 +1,234 @@
+// atom-sq-template-thru.moz   (v4-thru)
+// PreSonus ATOM SQ <-> Mozaic + MIDI passthrough to Drambo.
+//
+// Identical to atom-sq-template.moz except that @OnMidiInput forwards
+// note-on/note-off messages via SendMIDIThru so the Flexi sampler in
+// the same Drambo sub-track receives them and plays drum sounds.
+//
+// On load: native mode + all 32 pads dim blue + OLED test (sprays "MOZAIC" to
+// every text segment so we can see which one renders).
+// While running (one @OnMidiInput dispatcher):
+//   - pads (notes 36..67): green while held, dim blue on release, + SendMIDIThru
+//   - touch strip (pitch bend, ch16): the 25 strip LEDs (CC 55..79) FOLLOW your finger
+//   - logs every CC (banks/modes/directionals/shift/selection) + encoder deltas
+//
+// Map: docs/atom-sq-midi-map.md. Channels are 0-based.
+//
+// NOTE on LEDs: pads are confirmed note-type RGB (work). Bank/transport/mode button
+// LEDs use an ambiguous (note-vs-CC) RGB addressing in the decompile, so they're not
+// driven yet -- we'll confirm that with a quick test before lighting them.
+
+@OnLoad
+  SetShortName {ATOM SQ}
+  SendMIDIOut 143, 0, 1          // native mode ON (NoteOff ch16, note 0, vel 1)
+
+  // light all pads dim blue
+  padLow = 36
+  padHigh = 67
+  for n = padLow to padHigh
+    litNote = n
+    litR = 0
+    litG = 0
+    litB = 32
+    Call @LightPad
+  endfor
+
+  // Plus/Minus (+/-) buttons are note-type RGB (notes 0/1) -- light like pads
+  litNote = 0
+  litR = 0
+  litG = 127
+  litB = 0
+  Call @LightPad                // Plus  -> green
+  litNote = 1
+  litR = 127
+  litG = 0
+  litB = 0
+  Call @LightPad                // Minus -> red
+
+  // Bank buttons A..H are CC-type RGB at CC 0..7 (from the decompile) -- dim blue.
+  // If they don't light, paste a bank-press log line and I'll fix the number/type.
+  for b = 0 to 7
+    ccNum = b
+    litR = 0
+    litG = 0
+    litB = 90
+    Call @LightCCButton
+  endfor
+
+  lastPos = 0 - 1               // force first touch-strip LED update
+  Call @ShowAll                 // OLED: try every text segment
+@End
+
+
+// ---- light pad `litNote` to RGB (litR, litG, litB) ----  (note-type RGB)
+@LightPad
+  SendMIDINoteOn 1, litNote, litR     // ch1 = RED
+  SendMIDINoteOn 2, litNote, litG     // ch2 = GREEN
+  SendMIDINoteOn 3, litNote, litB     // ch3 = BLUE
+  SendMIDINoteOn 0, litNote, 127      // ch0 = brightness: 127 on, 1 blink, 2 pulse, 0 off
+@End
+
+
+// ---- light CC-type RGB button `ccNum` to (litR, litG, litB) ----
+// Used for bank buttons (CC 0..7) and any other CC-addressed RGB button.
+@LightCCButton
+  SendMIDICC 1, ccNum, litR           // ch1 = RED
+  SendMIDICC 2, ccNum, litG           // ch2 = GREEN
+  SendMIDICC 3, ccNum, litB           // ch3 = BLUE
+  SendMIDICC 0, ccNum, 127            // ch0 = on
+@End
+
+
+@OnMidiInput
+  status = MIDIByte1
+  if status >= 248
+    Exit                         // ignore clock / active-sensing
+  endif
+  d1 = MIDIByte2
+  d2 = MIDIByte3
+
+  kind = 0                       // 1=noteOn 2=noteOff 3=CC 4=pitchbend
+  if status >= 128
+    if status <= 143
+      kind = 2
+    endif
+  endif
+  if status >= 144
+    if status <= 159
+      if d2 > 0
+        kind = 1
+      else
+        kind = 2
+      endif
+    endif
+  endif
+  if status >= 176
+    if status <= 191
+      kind = 3
+    endif
+  endif
+  if status >= 224
+    if status <= 239
+      kind = 4
+    endif
+  endif
+
+  // ---- pad pressed: green + MIDI thru ----
+  if kind = 1
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 127
+        litB = 0
+        Call @LightPad
+        SendMIDIThru              // forward note-on to Drambo sampler
+      endif
+    endif
+    Log {Note ON }, d1, { vel }, d2
+  endif
+
+  // ---- pad released: dim blue + MIDI thru ----
+  if kind = 2
+    if d1 >= 36
+      if d1 <= 67
+        litNote = d1
+        litR = 0
+        litG = 0
+        litB = 32
+        Call @LightPad
+        SendMIDIThru              // forward note-off to Drambo sampler
+      endif
+    endif
+  endif
+
+  // ---- CC: encoders relative, everything else logged ----
+  if kind = 3
+    if d1 >= 14
+      if d1 <= 21
+        enc = d1 - 14
+        if d2 < 64
+          delta = d2
+        else
+          delta = 0 - (d2 - 64)
+        endif
+        Log {Enc }, enc, { delta }, delta
+      else
+        Log {CC }, d1, { = }, d2
+      endif
+    else
+      Log {CC }, d1, { = }, d2
+    endif
+  endif
+
+  // ---- touch strip: light the 25 strip LEDs (CC 55..79) up to finger position ----
+  if kind = 4
+    pos = d2 * 25 / 128          // pitch-bend MSB -> 0..24
+    if pos > 24
+      pos = 24
+    endif
+    if pos <> lastPos
+      for c = 55 to 79
+        idx = c - 55
+        if idx <= pos
+          SendMIDICC 0, c, 127
+        else
+          SendMIDICC 0, c, 0
+        endif
+      endfor
+      lastPos = pos
+    endif
+    Log {Strip }, d2
+  endif
+@End
+
+
+// ---- write `txt[0..txtLen-1]` to OLED display segment `segId` ----
+// Mozaic adds F0/F7 itself, so the array is inner bytes only.
+@WriteSeg
+  sx[0] = 0
+  sx[1] = 1
+  sx[2] = 6
+  sx[3] = 34       // 0x22
+  sx[4] = 18       // 0x12 display header
+  sx[5] = segId
+  sx[6] = 0
+  sx[7] = 91       // 0x5B
+  sx[8] = 91       // 0x5B
+  sx[9] = 1
+  i = 0
+  for i = 0 to txtLen - 1
+    sx[10 + i] = txt[i]
+  endfor
+  slen = 10 + txtLen
+  SendSysex sx, slen
+@End
+
+
+// ---- spray "MOZAIC" to every known text segment so we can see which one renders ----
+// 0,1,2,11,12,13 = soft-button labels   6 = track-name   7 = device-name
+@ShowAll
+  txt[0] = 77      // M
+  txt[1] = 79      // O
+  txt[2] = 90      // Z
+  txt[3] = 65      // A
+  txt[4] = 73      // I
+  txt[5] = 67      // C
+  txtLen = 6
+  segId = 0
+  Call @WriteSeg
+  segId = 1
+  Call @WriteSeg
+  segId = 2
+  Call @WriteSeg
+  segId = 6
+  Call @WriteSeg
+  segId = 7
+  Call @WriteSeg
+  segId = 11
+  Call @WriteSeg
+  segId = 12
+  Call @WriteSeg
+  segId = 13
+  Call @WriteSeg
+@End
