@@ -151,6 +151,8 @@ def make_drum_track(name, notes, root_time_pid):
     cv_key   = npid()
     cv_gate  = npid()
     cv_vel   = npid()
+    cv_p0    = npid()   # BSMidiToCVModule params (2 required)
+    cv_p1    = npid()
 
     sa_pid   = npid()   # BSMultiSamplerModule
     sa_out   = npid()
@@ -164,9 +166,13 @@ def make_drum_track(name, notes, root_time_pid):
         'modelId':   0,
         'pid':       cv_pid,
         'hcv':       False,
-        'mn':        False,
-        'params':    [],
-        'inputs':    [],
+        'mr':        True,
+        'vam':       0,
+        'params':    [
+            {'pid': cv_p0, 'v': 1.0, 'hcv': False},
+            {'pid': cv_p1, 'v': 0.0, 'hcv': False},
+        ],
+        'inputs':  [{'ac': True, 'tp': 5, 'ace': True, 'opid': io_mid}],
         'outputs': [
             {'pid': cv_key,  'nm': 'Key', 'tp': 2},
             {'pid': cv_gate, 'nm': 'G',   'tp': 3},
