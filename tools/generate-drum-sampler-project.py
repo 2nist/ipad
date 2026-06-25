@@ -48,31 +48,20 @@ DRUM_GROUPS = [
 ]
 
 # ── pid counter ──────────────────────────────────────────────────────────────
-# Template pids reach ~190; start above that.
+# Template pids reach ~190; start well above that.
 _pid = [300]
 
 def npid():
     _pid[0] += 1
     return _pid[0]
 
-# ── routing helpers ──────────────────────────────────────────────────────────
+# ── helpers ──────────────────────────────────────────────────────────────────
 
 def time_pid(rack):
     for io in rack.get('ioutputs', []):
         if io.get('nm') == 'Time':
             return io['pid']
     return None
-
-def set_bus(track, src, d1, d2, d3):
-    track['trackAudioSrc']  = src
-    track['trackAudioDst1'] = d1
-    track['trackAudioDst2'] = d2
-    track['trackAudioDst3'] = d3
-
-def wire_time(track, root_time):
-    ins = track.get('inputs')
-    if ins and len(ins) >= 2 and root_time is not None:
-        ins[1] = {'ac': True, 'ace': True, 'opid': root_time, 'tp': 6}
 
 def find_au_midi(module_list):
     for m in module_list:
@@ -85,8 +74,10 @@ def find_au_midi(module_list):
     return None
 
 # ── mixer track clone ────────────────────────────────────────────────────────
+# Remaps all owned pids to fresh values; replaces skel_time → my_root_time.
+# Preserves destNode1/2/3 routing exactly as authored in the skeleton.
 
-def clone_mixer_track(skel_subs, skel_time, name, bus, my_root_time):
+def clone_mixer_track(skel_subs, skel_time, name, my_root_time):
     src = copy.deepcopy(skel_subs[name])
     owned = set()
     def collect(o):
@@ -116,7 +107,6 @@ def clone_mixer_track(skel_subs, skel_time, name, bus, my_root_time):
                 apply(v)
     apply(src)
     src['name'] = name
-    set_bus(src, *bus)
     return src
 
 # ── empty drum slot ──────────────────────────────────────────────────────────
@@ -124,20 +114,19 @@ def clone_mixer_track(skel_subs, skel_time, name, bus, my_root_time):
 
 def make_slot(note):
     return {
-        'rn':  note,   # trigger note
-        'rt':  note,   # root note (pitch reference; same as rn for drums)
+        'rn':  note,
+        'rt':  note,
         'rf':  note,
-        'vf':  0.0,    # velocity from (0.0 = vel 0)
-        'vt':  1.0,    # velocity to   (1.0 = vel 127)
+        'vf':  0.0,
+        'vt':  1.0,
         'amp': 1.0,
         'md':  0,      # 0 = one-shot
         'nb':  1.0,
     }
 
 # ── drum sampler sub-track ────────────────────────────────────────────────────
-# Builds a BSDramboRackModule containing:
-#   BSMidiToCVModule  — converts MIDI note/gate/velocity to CV
-#   BSMultiSamplerModule — plays the sample for the incoming note
+# BSDramboRackModule containing BSMidiToCVModule + BSMultiSamplerModule.
+# Audio routing uses destNode1/2/3 (named targets), matching real Drambo projects.
 
 def make_drum_track(name, notes, root_time_pid):
     sub_pid  = npid()
@@ -147,14 +136,14 @@ def make_drum_track(name, notes, root_time_pid):
     io_mid   = npid()   # ioutput: MIDI
     io_time  = npid()   # ioutput: Time
 
-    cv_pid   = npid()   # BSMidiToCVModule
+    cv_pid   = npid()   # BSMidiToCVModule pid
     cv_key   = npid()
     cv_gate  = npid()
     cv_vel   = npid()
-    cv_p0    = npid()   # BSMidiToCVModule params (2 required)
+    cv_p0    = npid()   # 2 params required by the module
     cv_p1    = npid()
 
-    sa_pid   = npid()   # BSMultiSamplerModule
+    sa_pid   = npid()   # BSMultiSamplerModule pid
     sa_out   = npid()
     sp       = [npid() for _ in range(8)]   # sampler params
     tp       = [npid() for _ in range(9)]   # sub-track params
@@ -168,7 +157,7 @@ def make_drum_track(name, notes, root_time_pid):
         'hcv':       False,
         'mr':        True,
         'vam':       0,
-        'params':    [
+        'params': [
             {'pid': cv_p0, 'v': 1.0, 'hcv': False},
             {'pid': cv_p1, 'v': 0.0, 'hcv': False},
         ],
@@ -193,21 +182,21 @@ def make_drum_track(name, notes, root_time_pid):
         'pr':        1,
         'slots':     [make_slot(n) for n in notes],
         'params': [
-            {'pid': sp[0], 'v': 1.0,   'hcv': False},   # volume
-            {'pid': sp[1], 'v': 0.0,   'hcv': False},   # pan
-            {'pid': sp[2], 'v': 0.0,   'hcv': False},   # attack
-            {'pid': sp[3], 'v': 0.0,   'hcv': False},   # decay
-            {'pid': sp[4], 'v': 500.0, 'hcv': False},   # release
+            {'pid': sp[0], 'v': 1.0,   'hcv': False},
+            {'pid': sp[1], 'v': 0.0,   'hcv': False},
+            {'pid': sp[2], 'v': 0.0,   'hcv': False},
+            {'pid': sp[3], 'v': 0.0,   'hcv': False},
+            {'pid': sp[4], 'v': 500.0, 'hcv': False},
             {'pid': sp[5], 'v': 1.0,   'hcv': False},
             {'pid': sp[6], 'v': 250.0, 'hcv': False},
             {'pid': sp[7], 'v': 1.0,   'hcv': False},
         ],
         'outputs': [{'pid': sa_out, 'nm': '', 'tp': 0}],
         'inputs': [
-            {'ac': True, 'tp': 3, 'ace': True, 'opid': cv_gate},  # Gate
-            {'ac': True, 'tp': 2, 'ace': True, 'opid': cv_key},   # Key
-            {'ac': True, 'tp': 4, 'ace': True, 'opid': cv_vel},   # Velocity
-            {'ac': True, 'tp': 0, 'ace': True, 'opid': io_aud},   # Audio in (unused)
+            {'ac': True, 'tp': 3, 'ace': True, 'opid': cv_gate},
+            {'ac': True, 'tp': 2, 'ace': True, 'opid': cv_key},
+            {'ac': True, 'tp': 4, 'ace': True, 'opid': cv_vel},
+            {'ac': True, 'tp': 0, 'ace': True, 'opid': io_aud},
         ],
     }
 
@@ -237,10 +226,10 @@ def make_drum_track(name, notes, root_time_pid):
         'solog':          0,
         'muteStl':        False,
         'tspeed':         1.0,
-        'trackAudioSrc':  0,
-        'trackAudioDst1': 2,   # bus 2 = A
-        'trackAudioDst2': 3,   # bus 3 = B
-        'trackAudioDst3': 4,
+        # Named routing targets — same scheme as hand-built Drambo projects.
+        'destNode1':      'Master',
+        'destNode2':      'A',
+        'destNode3':      'B',
         'kbd': {'oct': 4, 'keys': [{'n': notes[0], 'g': 0.5, 'v': 1.0, 'o': 0.0}]},
         'params': [
             {'pid': tp[i], 'v': param_defaults[i], 'hcv': False}
@@ -262,8 +251,8 @@ def make_drum_track(name, notes, root_time_pid):
             {'pid': io_time, 'nm': 'Time',     'tp': 6},
         ],
         'iinputs': [
-            {'ac': True, 'tp': 0, 'ace': True, 'opid': sa_out},   # sampler audio out
-            {'ac': True, 'tp': 5, 'ace': True, 'opid': io_mid},   # MIDI passthrough
+            {'ac': True, 'tp': 0, 'ace': True, 'opid': sa_out},
+            {'ac': True, 'tp': 5, 'ace': True, 'opid': io_mid},
         ],
         'modules': [midi_to_cv, sampler],
     }
@@ -289,11 +278,14 @@ mozaic_sub = sub_tracks[0]
 mozaic_sub['name']           = 'LED'
 mozaic_sub['midiDstExtPort'] = 'ATOM SQ'
 mozaic_sub['midiDstExtChn']  = -1
+# Remove destNode routing — LED track sends no audio, only MIDI to ATOM SQ
 mozaic_sub.pop('destNode1', None)
 mozaic_sub.pop('destNode2', None)
 mozaic_sub.pop('destNode3', None)
-set_bus(mozaic_sub, 0, 0, 0, 0)    # LED track has no audio output
-wire_time(mozaic_sub, my_root_time)
+# Connect Time input
+ins = mozaic_sub.get('inputs', [])
+if len(ins) >= 2:
+    ins[1] = {'ac': True, 'ace': True, 'opid': my_root_time, 'tp': 6}
 
 # Keep only the Mozaic MIDI output in iinputs (no audio for LED-only track)
 mozaic_midi_out = mozaic_sub['iinputs'][1]['opid']
@@ -302,29 +294,28 @@ mozaic_sub['iinputs'] = [
     {'ac': True,  'ace': True, 'opid': mozaic_midi_out, 'tp': 5},
 ]
 
-# Build 4 drum sampler sub-tracks
+# Build 8 drum sampler sub-tracks
 drum_tracks = [
     make_drum_track(name, notes, my_root_time)
     for name, notes in DRUM_GROUPS
 ]
 
-# Clone A / B / Master mixer tracks from skeleton
+# Clone A / B / Master mixer tracks from skeleton (preserves their destNode routing)
 with open(SKELETON, 'rb') as f:
     skel = plistlib.load(f)
 skel_subs = {s.get('name'): s for s in skel['tracks']['modules']}
 skel_time = time_pid(skel['tracks'])
 
-track_A      = clone_mixer_track(skel_subs, skel_time, 'A',      (2, 2, 4, 0), my_root_time)
-track_B      = clone_mixer_track(skel_subs, skel_time, 'B',      (3, 2, 0, 0), my_root_time)
-track_Master = clone_mixer_track(skel_subs, skel_time, 'Master', (1, 1, 0, 0), my_root_time)
+track_A      = clone_mixer_track(skel_subs, skel_time, 'A',      my_root_time)
+track_B      = clone_mixer_track(skel_subs, skel_time, 'B',      my_root_time)
+track_Master = clone_mixer_track(skel_subs, skel_time, 'Master', my_root_time)
 
 mst_audio_out = track_Master['outputs'][0]['pid']
 mst_midi_out  = track_Master['outputs'][1]['pid']
 
-# Final track order: LED | Kick | Snare | Hat | Perc | A | B | Master
+# Final track order: LED | Kick | Sub | Snare | Rim | Hat | CHat | Cymbal | Perc | A | B | Master
 tracks['modules'] = [mozaic_sub] + drum_tracks + [track_A, track_B, track_Master]
 
-set_bus(tracks, 0, 0, 0, 0)
 tracks['iinputs'] = [
     {'ac': True, 'ace': True, 'opid': mst_audio_out, 'tp': 0},
     {'ac': True, 'ace': True, 'opid': mst_midi_out,  'tp': 5},
