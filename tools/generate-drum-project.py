@@ -339,7 +339,7 @@ mozaic['unitDescription']['fullState']['CODE'] = script_text.encode('utf-8')
 # Route sub-track 1 MIDI output to ATOM SQ so LED commands reach the hardware
 sub_tracks[0]['midiDstExtPort'] = 'ATOM SQ'
 sub_tracks[0]['midiDstExtChn'] = -1
-sub_tracks[0]['destNode1'] = None   # route to Drambo master bus
+sub_tracks[0].pop('destNode1', None)   # absent = route to Drambo master bus
 
 # ── Replace sub-track 2 modules with drum voices ──────────────────────────────
 # sub_tracks[1] is the second BSDramboRackModule (already wired to Ext.Out 1 or 2).
@@ -347,7 +347,7 @@ sub_tracks[0]['destNode1'] = None   # route to Drambo master bus
 drum_track = sub_tracks[1]
 drum_track['modules'] = voice_modules
 drum_track['name'] = 'Drums'
-drum_track['destNode1'] = None   # None = route to Drambo master bus (default)
+drum_track.pop('destNode1', None)   # absent = route to Drambo master bus
 drum_track['outputs'] = [
     {'nm': 'Out',  'pid': 50, 'tp': 0},
     {'nm': 'MIDI', 'pid': 51, 'tp': 5},
