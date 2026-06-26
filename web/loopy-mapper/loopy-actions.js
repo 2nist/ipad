@@ -43,7 +43,15 @@
     { name: "Adjust Master Volume", id: null, category: "session", verified: false, aliases: ["adjust master volume", "master volume"] },
     { name: "Cancel Pending Actions", id: null, category: "session", verified: false, aliases: ["cancel pending actions", "cancel pending"] },
     { name: "Toggle Sequence", id: null, category: "session", verified: false, aliases: ["toggle sequence"] },
-    { name: "Toggle Mixer", id: null, category: "session", verified: false, aliases: ["toggle mixer"] }
+    { name: "Toggle Mixer", id: null, category: "session", verified: false, aliases: ["toggle mixer"] },
+
+    // ---- Effect actions ----
+    { name: "Enable/Disable Effect", id: null, category: "effect", verified: false, aliases: ["enable/disable effect", "fx", "fx toggle", "effect toggle"] },
+    { name: "Adjust Effect Parameter", id: null, category: "effect", verified: false, aliases: ["adjust effect parameter", "fx param"] },
+
+    // ---- Capture (state snapshot) actions — names tentative, harvest to confirm ----
+    { name: "MIDI Scene Capture", id: null, category: "capture", verified: false, aliases: ["midi scene capture", "midi capture"] },
+    { name: "Audio Scene Capture", id: null, category: "capture", verified: false, aliases: ["audio scene capture", "audio capture"] }
   ];
 
   // Targeting modifiers (the `Subject` field). "index" = a concrete track index
