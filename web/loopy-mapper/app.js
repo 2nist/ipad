@@ -27,13 +27,10 @@ const TEMPLATE_FILES = [
   `${ACTIVE_PROFILE_DIR}/Internal.Internal.controllerprofile`
 ];
 
-const ALLOWED_ACTIONS = new Set([
-  "Track Play/Stop",
-  "Track Select",
-  "Track Solo",
-  "Track Parameter",
-  "Send MIDI"
-]);
+// Action library (loopy-actions.js, loaded before this script). Lets the YAML use
+// friendly names ("clear") that resolve to verified serialized identifiers
+// ("Clear Track"). Falls back gracefully if the file is missing.
+const ACTION_LIB = typeof LoopyActions !== "undefined" ? LoopyActions : null;
 
 const DEFAULT_YAML = `project:
   name: Generated Loopy Mapping
@@ -225,15 +222,25 @@ function normalizeBinding(binding, index, errors, warnings) {
       return { identifier: "", subject: "", timing: "Sequential", parameters: {} };
     }
 
-    const identifier = action.identifier || "";
-    if (!identifier) {
+    const rawId = action.identifier || action.action || "";
+    let identifier = String(rawId);
+    if (!rawId) {
       errors.push(`"${label}" action ${actionIndex + 1} is missing identifier.`);
-    } else if (!ALLOWED_ACTIONS.has(identifier)) {
-      warnings.push(`"${label}" uses unlisted action "${identifier}". It will still be exported.`);
+    } else {
+      const found = ACTION_LIB && ACTION_LIB.resolveAction(rawId);
+      if (!found) {
+        warnings.push(`"${label}" action "${rawId}" is not in the action library; exported as-is.`);
+      } else if (found.id) {
+        identifier = found.id; // resolve friendly name/alias -> verified serialized id
+      } else {
+        // Known action, but its serialized identifier hasn't been harvested yet.
+        identifier = found.name;
+        warnings.push(`"${label}" action "${found.name}" is unverified — exported as a guess. Set it up in Loopy, export, and harvest the real identifier.`);
+      }
     }
 
     return {
-      identifier: String(identifier),
+      identifier,
       subject: action.subject === undefined ? "" : String(action.subject),
       timing: action.timing ? String(action.timing) : "Sequential",
       parameters: action.parameters && typeof action.parameters === "object" ? action.parameters : {}

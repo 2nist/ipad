@@ -1,10 +1,11 @@
-const CACHE_NAME = "loopy-mapper-v6";
+const CACHE_NAME = "loopy-mapper-v7";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./loopy-actions.js",
   "./manifest.json",
   "./template/drum-looper.lpproj/Info.plist",
   "./template/drum-looper.lpproj/Project.sqlite",

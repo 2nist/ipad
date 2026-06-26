@@ -32,4 +32,39 @@ bindings:
         parameters: {}
 ```
 
-Supported trigger helpers are `kind: note`, `kind: cc`, or `raw`. Unknown Loopy action identifiers are exported with a warning so new Loopy actions can be tested without changing the app first.
+### Triggers
+
+Loopy encodes triggers as **hex MIDI bytes** `<status><data1><value>` (status nibble
+`9`=NoteOn, `b`=CC; low nibble = 0-based channel). The generator builds these for you from
+the friendly fields:
+
+- `kind: note` → `{ channel, note }` (e.g. note 36 ch10 → `99247f`)
+- `kind: cc` → `{ channel, cc }` (e.g. CC20 ch3 → `b2147f`)
+- add `hold: true` for a hold gesture → `h:`-prefixed, value byte dropped (e.g. `h:b214`)
+- `raw: "<string>"` to pass a trigger through verbatim
+
+The press value defaults to `127`; matching `127` keeps a CC's release (`0`) from
+double-firing.
+
+### Actions
+
+Actions accept a friendly name, alias, or the serialized identifier (`action:` or
+`identifier:`), resolved via [loopy-actions.js](loopy-actions.js):
+
+- `clear` → `Clear Track`, `play/stop` → `Track Play/Stop` (both **verified** from real exports)
+- Names that are known but not yet harvested export as a **warned guess** so they can be tested
+- Unknown strings export as-is with a warning
+
+`loopy-actions.js` is the action library and the harvest backlog: `verified: true` entries have
+a confirmed serialized identifier; `id: null` entries still need one.
+
+## Harvesting new actions
+
+The serialized identifiers differ from Loopy's UI labels (the UI's "Clear" is `Clear Track`),
+so new actions are confirmed from real exports rather than guessed:
+
+1. Set the action up in Loopy, export the project (`.lpproj`).
+2. Decode it: `node tools/decode-lpproj.js <path-to.lpproj>` — it lists every binding and flags
+   any **new** identifiers not yet in the library (it also auto-repairs an export that was
+   committed as text and got UTF-8-mangled).
+3. Add the confirmed identifier to `loopy-actions.js` as `verified: true`.
