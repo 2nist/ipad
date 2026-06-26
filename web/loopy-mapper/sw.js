@@ -1,4 +1,4 @@
-const CACHE_NAME = "loopy-mapper-v3";
+const CACHE_NAME = "loopy-mapper-v4";
 
 const ASSETS = [
   "./",
