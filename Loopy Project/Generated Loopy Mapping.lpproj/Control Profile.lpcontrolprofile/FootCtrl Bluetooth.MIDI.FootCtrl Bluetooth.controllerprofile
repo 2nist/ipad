@@ -3,8 +3,9 @@
 <plist version="1.0">
 <dict>
 	<!--
-	  FootCtrl Bluetooth foot switch bindings: CC 20-23 on MIDI ch 1.
-	  Trigger format: b<channel_0indexed><cc_decimal_2digit> — b020 = ch1 CC20.
+	  FootCtrl Bluetooth foot switch bindings: CC 20-23 on MIDI ch 3.
+	  Ch 3 keeps the pedals out of the way of keyboards (which default to ch 1).
+	  Trigger format: b<channel_0indexed><cc_decimal_2digit> — b220 = ch3 CC20.
 	  Each pedal controls one loop track (tracks 8-11 in scene, 0-indexed).
 	  "recordTracksIfEmpty": true in project settings means pressing Play/Stop on an
 	  empty loop track starts recording; pressing again ends record and starts looping.
@@ -27,7 +28,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>b020</string>
+			<string>b220</string>
 		</dict>
 		<!-- CC 21 = pedal 2 → Loop 2 record/play/stop (track index 9) -->
 		<dict>
@@ -45,7 +46,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>b021</string>
+			<string>b221</string>
 		</dict>
 		<!-- CC 22 = pedal 3 → Loop 3 record/play/stop (track index 10) -->
 		<dict>
@@ -63,7 +64,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>b022</string>
+			<string>b222</string>
 		</dict>
 		<!-- CC 23 = pedal 4 → Loop 4 record/play/stop (track index 11) -->
 		<dict>
@@ -81,7 +82,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>b023</string>
+			<string>b223</string>
 		</dict>
 	</array>
 	<key>Device</key>
