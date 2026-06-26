@@ -4,6 +4,7 @@
 <dict>
 	<key>Bindings</key>
 	<array>
+		<!-- Kick -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -21,6 +22,7 @@
 			<key>Trigger</key>
 			<string>99247f</string>
 		</dict>
+		<!-- Snare -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -38,6 +40,7 @@
 			<key>Trigger</key>
 			<string>99257f</string>
 		</dict>
+		<!-- Closed HH -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -55,6 +58,7 @@
 			<key>Trigger</key>
 			<string>99267f</string>
 		</dict>
+		<!-- Open HH -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -72,6 +76,7 @@
 			<key>Trigger</key>
 			<string>99277f</string>
 		</dict>
+		<!-- Lo Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -89,6 +94,7 @@
 			<key>Trigger</key>
 			<string>99287f</string>
 		</dict>
+		<!-- Mid Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -106,6 +112,7 @@
 			<key>Trigger</key>
 			<string>99297f</string>
 		</dict>
+		<!-- Hi Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -123,6 +130,7 @@
 			<key>Trigger</key>
 			<string>992a7f</string>
 		</dict>
+		<!-- Crash -->
 		<dict>
 			<key>Actions</key>
 			<array>

@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<array>
-	<string>71277940-8A6E-41A5-BCB6-3B56A96AD947.aiff</string>
-	<string>44988EC8-7411-4CD9-A684-33DB04DC914C.aiff</string>
-	<string>832CD302-C537-476F-BCB3-229B33827196.aiff</string>
-	<string>en-US.lproj</string>
-	<string>30D21514-2DC1-496E-9F7A-CB955C964EB6.aiff</string>
-</array>
+<dict/>
 </plist>
