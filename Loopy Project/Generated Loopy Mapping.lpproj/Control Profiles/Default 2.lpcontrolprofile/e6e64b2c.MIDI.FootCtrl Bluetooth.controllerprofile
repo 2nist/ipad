@@ -11,15 +11,35 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
 					<key>Subject</key>
-					<string>#10</string>
+					<string>#20</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>10:Swipe Right</string>
+			<string>h:b214</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>#20</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b218</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -28,15 +48,35 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
 					<key>Subject</key>
-					<string>#11</string>
+					<string>#21</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>11:Swipe Right</string>
+			<string>h:b215</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>#21</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b219</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -45,15 +85,35 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
 					<key>Subject</key>
-					<string>#12</string>
+					<string>#22</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>12:Swipe Right</string>
+			<string>h:b216</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>#22</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b21a</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -62,90 +122,42 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
 					<key>Subject</key>
-					<string>#13</string>
+					<string>#23</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>13:Swipe Right</string>
+			<string>h:b217</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
 			<array>
 				<dict>
 					<key>Identifier</key>
-					<string>Track Play/Stop</string>
+					<string>Clear Track</string>
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#14</string>
+					<string>#23</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>14:Swipe Right</string>
-		</dict>
-		<dict>
-			<key>Actions</key>
-			<array>
-				<dict>
-					<key>Identifier</key>
-					<string>Track Play/Stop</string>
-					<key>Parameters</key>
-					<dict/>
-					<key>Subject</key>
-					<string>#15</string>
-					<key>Timing</key>
-					<string>Sequential</string>
-				</dict>
-			</array>
-			<key>Trigger</key>
-			<string>15:Swipe Right</string>
-		</dict>
-		<dict>
-			<key>Actions</key>
-			<array>
-				<dict>
-					<key>Identifier</key>
-					<string>Track Play/Stop</string>
-					<key>Parameters</key>
-					<dict/>
-					<key>Subject</key>
-					<string>#16</string>
-					<key>Timing</key>
-					<string>Sequential</string>
-				</dict>
-			</array>
-			<key>Trigger</key>
-			<string>16:Swipe Right</string>
-		</dict>
-		<dict>
-			<key>Actions</key>
-			<array>
-				<dict>
-					<key>Identifier</key>
-					<string>Track Play/Stop</string>
-					<key>Parameters</key>
-					<dict/>
-					<key>Subject</key>
-					<string>#17</string>
-					<key>Timing</key>
-					<string>Sequential</string>
-				</dict>
-			</array>
-			<key>Trigger</key>
-			<string>17:Swipe Right</string>
+			<string>h:b21b</string>
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>Internal</string>
+	<string>e6e64b2c</string>
 	<key>Device Name</key>
-	<string>Internal</string>
+	<string>FootCtrl Bluetooth</string>
 	<key>Type</key>
-	<string>Internal</string>
+	<string>MIDI</string>
 </dict>
 </plist>

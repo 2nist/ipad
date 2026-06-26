@@ -19,7 +19,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>10:Swipe Right</string>
+			<string>9936</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -36,7 +36,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>11:Swipe Right</string>
+			<string>9937</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -53,7 +53,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>12:Swipe Right</string>
+			<string>9938</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -70,7 +70,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>13:Swipe Right</string>
+			<string>9939</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -87,7 +87,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>14:Swipe Right</string>
+			<string>9940</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -104,7 +104,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>15:Swipe Right</string>
+			<string>9941</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -121,7 +121,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>16:Swipe Right</string>
+			<string>9942</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -138,14 +138,14 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>17:Swipe Right</string>
+			<string>9943</string>
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>Internal</string>
+	<string>ATM SQ</string>
 	<key>Device Name</key>
-	<string>Internal</string>
+	<string>ATM SQ</string>
 	<key>Type</key>
-	<string>Internal</string>
+	<string>MIDI</string>
 </dict>
 </plist>

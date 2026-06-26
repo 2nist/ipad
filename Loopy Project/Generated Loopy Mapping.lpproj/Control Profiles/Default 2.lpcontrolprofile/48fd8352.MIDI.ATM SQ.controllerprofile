@@ -11,15 +11,18 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>1</integer>
+					</dict>
 					<key>Subject</key>
-					<string>8</string>
+					<string>#11</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>b0147f</string>
+			<string>99257f</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -28,15 +31,18 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>1</integer>
+					</dict>
 					<key>Subject</key>
-					<string>10</string>
+					<string>#10</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>h:b215</string>
+			<string>99247f</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -45,15 +51,18 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>1</integer>
+					</dict>
 					<key>Subject</key>
-					<string>9</string>
+					<string>#12</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>h:b216</string>
+			<string>99267f</string>
 		</dict>
 		<dict>
 			<key>Actions</key>
@@ -62,21 +71,24 @@
 					<key>Identifier</key>
 					<string>Track Play/Stop</string>
 					<key>Parameters</key>
-					<dict/>
+					<dict>
+						<key>Type</key>
+						<integer>1</integer>
+					</dict>
 					<key>Subject</key>
-					<string>11</string>
+					<string>#13</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>h:b217</string>
+			<string>99277f</string>
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>FootCtrl Bluetooth</string>
+	<string>48fd8352</string>
 	<key>Device Name</key>
-	<string>FootCtrl Bluetooth</string>
+	<string>ATM SQ</string>
 	<key>Type</key>
 	<string>MIDI</string>
 </dict>

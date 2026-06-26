@@ -4,6 +4,7 @@
 <dict>
 	<key>Bindings</key>
 	<array>
+		<!-- Kick -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -13,14 +14,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#10</string>
+					<string>0</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>10:Swipe Right</string>
+			<string>99247f</string>
 		</dict>
+		<!-- Snare -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -30,14 +32,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#11</string>
+					<string>1</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>11:Swipe Right</string>
+			<string>99257f</string>
 		</dict>
+		<!-- Closed HH -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -47,14 +50,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#12</string>
+					<string>2</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>12:Swipe Right</string>
+			<string>99267f</string>
 		</dict>
+		<!-- Open HH -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -64,14 +68,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#13</string>
+					<string>3</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>13:Swipe Right</string>
+			<string>99277f</string>
 		</dict>
+		<!-- Lo Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -81,14 +86,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#14</string>
+					<string>4</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>14:Swipe Right</string>
+			<string>99287f</string>
 		</dict>
+		<!-- Mid Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -98,14 +104,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#15</string>
+					<string>5</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>15:Swipe Right</string>
+			<string>99297f</string>
 		</dict>
+		<!-- Hi Tom -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -115,14 +122,15 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#16</string>
+					<string>6</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>16:Swipe Right</string>
+			<string>992a7f</string>
 		</dict>
+		<!-- Crash -->
 		<dict>
 			<key>Actions</key>
 			<array>
@@ -132,20 +140,20 @@
 					<key>Parameters</key>
 					<dict/>
 					<key>Subject</key>
-					<string>#17</string>
+					<string>7</string>
 					<key>Timing</key>
 					<string>Sequential</string>
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>17:Swipe Right</string>
+			<string>992b7f</string>
 		</dict>
 	</array>
 	<key>Device</key>
-	<string>Internal</string>
+	<string>ATM SQ</string>
 	<key>Device Name</key>
-	<string>Internal</string>
+	<string>ATM SQ</string>
 	<key>Type</key>
-	<string>Internal</string>
+	<string>MIDI</string>
 </dict>
 </plist>
