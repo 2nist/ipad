@@ -25,7 +25,11 @@
     <section class="editorPane" aria-label="YAML mapping editor">
       <div class="paneHeader">
         <h2>YAML</h2>
-        <button id="resetButton" type="button">Reset</button>
+        <span class="paneButtons">
+          <button id="loadButton" type="button">Load</button>
+          <button id="resetButton" type="button">Reset</button>
+        </span>
+        <input id="loadFile" type="file" accept=".yaml,.yml,.txt,text/yaml,text/plain" hidden>
       </div>
       <textarea id="yamlInput" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
     </section>

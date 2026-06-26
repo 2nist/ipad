@@ -114,6 +114,8 @@ const validateButton = document.getElementById("validateButton");
 const exportProfileButton = document.getElementById("exportProfileButton");
 const exportProjectButton = document.getElementById("exportProjectButton");
 const resetButton = document.getElementById("resetButton");
+const loadButton = document.getElementById("loadButton");
+const loadFile = document.getElementById("loadFile");
 
 let latestResult = null;
 
@@ -133,6 +135,22 @@ function init() {
     yamlInput.value = DEFAULT_YAML;
     localStorage.setItem("loopyMapperYaml", yamlInput.value);
     refreshPreview();
+  });
+
+  loadButton.addEventListener("click", () => loadFile.click());
+  loadFile.addEventListener("change", async () => {
+    const file = loadFile.files && loadFile.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      yamlInput.value = text;
+      localStorage.setItem("loopyMapperYaml", text);
+      refreshPreview();
+      setStatus(`Loaded ${file.name}`);
+    } catch (error) {
+      setMessage(`Could not read ${file.name}.`, "bad");
+    }
+    loadFile.value = ""; // reset so the same file can be re-loaded
   });
 
   if ("serviceWorker" in navigator) {

@@ -121,6 +121,11 @@ button.primary {
   border-bottom: 1px solid var(--line);
 }
 
+.paneButtons {
+  display: flex;
+  gap: 8px;
+}
+
 #bindingCount {
   color: var(--muted);
   font-size: 13px;
