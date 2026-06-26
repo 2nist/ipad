@@ -169,10 +169,13 @@ function buildFromYaml(source) {
     return { config: {}, bindings: [], errors: ["YAML must parse to an object."], warnings };
   }
 
-  const bindings = Array.isArray(parsed.bindings) ? parsed.bindings : [];
+  const rawBindings = Array.isArray(parsed.bindings) ? parsed.bindings : [];
   if (!Array.isArray(parsed.bindings)) {
     errors.push("Missing bindings array.");
   }
+  // Expand any `repeat: N` blocks into N concrete bindings (auto-incrementing
+  // note/cc and numeric subject). Lets a whole bank be a few lines of YAML.
+  const bindings = rawBindings.flatMap((b) => expandBinding(b, errors));
 
   const device = parsed.device || {};
   if (!device.name) errors.push("Missing device.name.");
@@ -199,6 +202,56 @@ function buildFromYaml(source) {
   }
 
   return { config: parsed, bindings: normalized, errors, warnings };
+}
+
+// Expand a `repeat: N` binding into N concrete bindings. Per step (index 0..N-1):
+//   - trigger.note / trigger.cc increments by step.note / step.cc (default 1)
+//   - each numeric action.subject increments by step.subject (default 1)
+//   - label tokens: %n (1-based), %i (0-based), %note, %cc, %subject
+// A plain binding (no `repeat`) passes through unchanged.
+function expandBinding(binding, errors) {
+  if (!binding || typeof binding !== "object" || binding.repeat === undefined) {
+    return [binding];
+  }
+  const count = Number(binding.repeat);
+  if (!Number.isInteger(count) || count < 1 || count > 256) {
+    errors.push(`"${binding.label || "repeat block"}" has an invalid repeat (1..256).`);
+    return [binding];
+  }
+  const step = binding.step && typeof binding.step === "object" ? binding.step : {};
+  const noteStep = step.note === undefined ? 1 : Number(step.note);
+  const ccStep = step.cc === undefined ? 1 : Number(step.cc);
+  const subjStep = step.subject === undefined ? 1 : Number(step.subject);
+  const out = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const trigger = Object.assign({}, binding.trigger);
+    if (trigger && typeof trigger === "object") {
+      if (trigger.note !== undefined) trigger.note = Number(trigger.note) + i * noteStep;
+      if (trigger.cc !== undefined) trigger.cc = Number(trigger.cc) + i * ccStep;
+    }
+    const actions = (Array.isArray(binding.actions) ? binding.actions : []).map((a) => {
+      const copy = Object.assign({}, a);
+      if (copy.subject !== undefined && /^-?\d+$/.test(String(copy.subject))) {
+        copy.subject = String(Number(copy.subject) + i * subjStep);
+      }
+      return copy;
+    });
+    const tokens = {
+      "%n": String(i + 1),
+      "%i": String(i),
+      "%note": trigger && trigger.note !== undefined ? String(trigger.note) : "",
+      "%cc": trigger && trigger.cc !== undefined ? String(trigger.cc) : "",
+      "%subject": actions[0] && actions[0].subject !== undefined ? String(actions[0].subject) : ""
+    };
+    const label = applyTokens(binding.label === undefined ? `Step %n` : String(binding.label), tokens);
+    out.push({ label, trigger, actions });
+  }
+  return out;
+}
+
+function applyTokens(text, tokens) {
+  return text.replace(/%note|%cc|%subject|%n|%i/g, (t) => (t in tokens ? tokens[t] : t));
 }
 
 function normalizeBinding(binding, index, errors, warnings) {

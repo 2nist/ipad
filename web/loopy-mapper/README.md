@@ -58,6 +58,24 @@ Actions accept a friendly name, alias, or the serialized identifier (`action:` o
 `loopy-actions.js` is the action library and the harvest backlog: `verified: true` entries have
 a confirmed serialized identifier; `id: null` entries still need one.
 
+### Banks (`repeat`)
+
+Map a whole bank of pads in a few lines instead of one block each. A binding with
+`repeat: N` expands to N bindings, auto-incrementing the note/cc and any numeric subject:
+
+```yaml
+bindings:
+  - repeat: 32
+    label: "Pad %n -> Loop %subject"
+    trigger: { kind: note, channel: 10, note: 36 }   # note 36, 37, 38 ...
+    actions:
+      - action: play/stop
+        subject: 0                                    # track 0, 1, 2 ...
+```
+
+- `step: { note: 2, subject: 0 }` overrides the increments (e.g. hold a subject constant).
+- Label tokens: `%n` (1-based), `%i` (0-based), `%note`, `%cc`, `%subject`.
+
 ## Harvesting new actions
 
 The serialized identifiers differ from Loopy's UI labels (the UI's "Clear" is `Clear Track`),
