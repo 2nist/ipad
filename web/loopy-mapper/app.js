@@ -259,14 +259,22 @@ function encodeTrigger(trigger, label, errors) {
     return "";
   }
 
+  // Loopy encodes triggers as HEX MIDI bytes: <status><data1>[<value>].
+  // A press/tap includes the value byte (default 0x7f / 127); a hold gesture
+  // is prefixed "h:" and omits the value byte (e.g. h:b215 = hold CC21 ch3).
+  // Status nibble: 9 = NoteOn, b = CC; low nibble = 0-based channel.
   const channelIndex = channel - 1;
+  const hold = trigger.hold === true || String(trigger.gesture || "").toLowerCase() === "hold";
+  const value = trigger.value === undefined ? 127 : Number(trigger.value);
+
   if (kind === "note") {
     const note = Number(trigger.note);
     if (!Number.isInteger(note) || note < 0 || note > 127) {
       errors.push(`"${label}" trigger.note must be 0..127.`);
       return "";
     }
-    return `9${channelIndex}${note}`;
+    const status = 0x90 | channelIndex;
+    return hold ? `h:${midiHex(status)}${midiHex(note)}` : `${midiHex(status)}${midiHex(note)}${midiHex(value)}`;
   }
 
   if (kind === "cc") {
@@ -275,11 +283,17 @@ function encodeTrigger(trigger, label, errors) {
       errors.push(`"${label}" trigger.cc must be 0..127.`);
       return "";
     }
-    return `b${channelIndex}${String(cc).padStart(2, "0")}`;
+    const status = 0xb0 | channelIndex;
+    return hold ? `h:${midiHex(status)}${midiHex(cc)}` : `${midiHex(status)}${midiHex(cc)}${midiHex(value)}`;
   }
 
   errors.push(`"${label}" trigger.kind must be note, cc, or use raw.`);
   return "";
+}
+
+// Two-digit lowercase hex for a single MIDI byte.
+function midiHex(n) {
+  return (n & 0xff).toString(16).padStart(2, "0");
 }
 
 function renderResult(result) {

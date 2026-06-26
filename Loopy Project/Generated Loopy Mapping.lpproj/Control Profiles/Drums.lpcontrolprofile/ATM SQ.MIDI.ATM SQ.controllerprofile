@@ -20,7 +20,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9936</string>
+			<string>99247f</string>
 		</dict>
 		<!-- Snare -->
 		<dict>
@@ -38,7 +38,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9937</string>
+			<string>99257f</string>
 		</dict>
 		<!-- Closed HH -->
 		<dict>
@@ -56,7 +56,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9938</string>
+			<string>99267f</string>
 		</dict>
 		<!-- Open HH -->
 		<dict>
@@ -74,7 +74,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9939</string>
+			<string>99277f</string>
 		</dict>
 		<!-- Lo Tom -->
 		<dict>
@@ -92,7 +92,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9940</string>
+			<string>99287f</string>
 		</dict>
 		<!-- Mid Tom -->
 		<dict>
@@ -110,7 +110,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9941</string>
+			<string>99297f</string>
 		</dict>
 		<!-- Hi Tom -->
 		<dict>
@@ -128,7 +128,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9942</string>
+			<string>992a7f</string>
 		</dict>
 		<!-- Crash -->
 		<dict>
@@ -146,7 +146,7 @@
 				</dict>
 			</array>
 			<key>Trigger</key>
-			<string>9943</string>
+			<string>992b7f</string>
 		</dict>
 	</array>
 	<key>Device</key>
