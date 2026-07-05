@@ -1,0 +1,11 @@
+[
+    {
+        "id": "example-song-01",
+        "title": "Example Song",
+        "artist": "The Gemini Crew",
+        "key": "C",
+        "bpm": "120",
+        "path": "./songs/example.song.json"
+    }Needs sections chords and lyrics
+    
+]

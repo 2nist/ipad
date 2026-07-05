@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Bindings</key>
+	<array>
+		<!-- Kick -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>0</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99247f</string>
+		</dict>
+		<!-- Snare -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>1</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99257f</string>
+		</dict>
+		<!-- Closed HH -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>2</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99267f</string>
+		</dict>
+		<!-- Open HH -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>3</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99277f</string>
+		</dict>
+		<!-- Lo Tom -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99287f</string>
+		</dict>
+		<!-- Mid Tom -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>5</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>99297f</string>
+		</dict>
+		<!-- Hi Tom -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>6</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>992a7f</string>
+		</dict>
+		<!-- Crash -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>7</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>992b7f</string>
+		</dict>
+	</array>
+	<key>Device</key>
+	<string>ATM SQ</string>
+	<key>Device Name</key>
+	<string>ATM SQ</string>
+	<key>Type</key>
+	<string>MIDI</string>
+</dict>
+</plist>

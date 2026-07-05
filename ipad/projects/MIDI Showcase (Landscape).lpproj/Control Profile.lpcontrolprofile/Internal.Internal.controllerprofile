@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Bindings</key>
+	<array>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9038</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>67:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903a</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>71:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903c</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>72:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903e</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>73:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903f</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>74:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9041</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>75:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9043</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>76:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9046</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>77:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9038</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>129:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903f</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>130:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903a</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>131:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9041</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>132:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903c</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>133:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9043</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>134:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>903e</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>135:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>9046</string>
+					</dict>
+					<key>Subject</key>
+					<string>Group #4</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>136:Hold</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Adjust Effect Parameter</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>#162:Filter 1.Cut-Off</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>B000</string>
+						<key>Monitor Through Color Destinations</key>
+						<false/>
+					</dict>
+					<key>Subject</key>
+					<string>Group #170</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>163:X-Value</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Adjust Effect Parameter</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>#162:Filter 1.Q</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+				<dict>
+					<key>Identifier</key>
+					<string>Send MIDI</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Message</key>
+						<string>b001</string>
+						<key>Monitor Through Color Destinations</key>
+						<false/>
+					</dict>
+					<key>Subject</key>
+					<string>Group #170</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>163:Y-Value</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Group Parameter</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>Group #62</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>164:Value</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Group Parameter</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>Group #3</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>165:Value</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Group Parameter</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>Group #6</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>194:Value</string>
+		</dict>
+	</array>
+	<key>Device</key>
+	<string>Internal</string>
+	<key>Device Name</key>
+	<string>Internal</string>
+	<key>Type</key>
+	<string>Internal</string>
+</dict>
+</plist>
