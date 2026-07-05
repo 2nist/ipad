@@ -39,7 +39,7 @@ const DEFAULT_SECTION: Omit<SongSection, 'id'> = {
 };
 
 export interface SongSlice {
-    // State is part of LooperStore.song
+    song: SongObject;
     // Actions:
     addModule: LooperStoreActions['addModule'];
     removeModule: LooperStoreActions['removeModule'];
@@ -79,6 +79,8 @@ export const createSongSlice: StateCreator<
     [],
     SongSlice
 > = (set, get) => ({
+    song: createDefaultSong(),
+
     addModule: (preset: ModulePreset) => {
         const id = uuid();
         const newModule: ModuleCard = {
@@ -312,8 +314,12 @@ export const createSongSlice: StateCreator<
     },
 
     newSong: (metadata: SongMetadata) => {
+        const song = createDefaultSong();
+        if (metadata) {
+            song.metadata = { ...song.metadata, ...metadata };
+        }
         set({
-            song: createDefaultSong(),
+            song,
             transport: {
                 isPlaying: false,
                 isRecording: false,
@@ -326,22 +332,32 @@ export const createSongSlice: StateCreator<
             },
             moduleStates: {},
             ui: {
-                activeModal: { type: "none" },
-                activeEditorPanel: { type: "none" },
+                activeModal: { type: "none" } as const,
+                activeEditorPanel: { type: "none" } as const,
                 editingModuleId: null,
                 editingTrackIndex: null,
                 clipBrowserOpen: false,
                 sidebarVisible: true,
-                canvasView: DEFAULT_CANVAS_VIEW,
+                rightPanelVisible: false,
+                lyrics: "",
+                lyricsSectionId: null,
+                canvasView: {
+                    viewLevel: "sectionsOnly" as const,
+                    selectedSectionIds: [],
+                    selectedModuleIds: [],
+                    zoomLevel: 50,
+                    scrollPosition: 0,
+                    chordEditorOpen: false,
+                    chordEditorBarIndex: null,
+                    isPlaying: false,
+                    playheadPosition: 0,
+                },
                 midiLearnTarget: null,
                 midiActivity: false,
                 midiDeviceConnected: false,
                 audioInitialized: false,
             },
         });
-        if (metadata) {
-            get().setSongMetadata(metadata);
-        }
     },
 
     saveSong: () => get().song,

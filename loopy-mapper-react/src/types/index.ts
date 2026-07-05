@@ -609,6 +609,9 @@ export interface LooperStore {
         editingTrackIndex: number | null;
         clipBrowserOpen: boolean;
         sidebarVisible: boolean;
+        rightPanelVisible: boolean;
+        lyrics: string;
+        lyricsSectionId: string | null;
         canvasView: CanvasViewState;
         midiLearnTarget: string | null;
         midiActivity: boolean;

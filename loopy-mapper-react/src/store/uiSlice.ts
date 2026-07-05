@@ -15,6 +15,9 @@ export interface UiSlice {
         editingTrackIndex: number | null;
         clipBrowserOpen: boolean;
         sidebarVisible: boolean;
+        rightPanelVisible: boolean;
+        lyrics: string;
+        lyricsSectionId: string | null;
         canvasView: CanvasViewState;
         midiLearnTarget: string | null;
         midiActivity: boolean;
@@ -28,6 +31,9 @@ export interface UiSlice {
     setCanvasView: (view: Partial<CanvasViewState>) => void;
     setMidiLearnTarget: (target: string | null) => void;
     toggleClipBrowser: () => void;
+    toggleRightPanel: () => void;
+    setLyrics: (text: string) => void;
+    assignLyricsToSection: (sectionId: string | null) => void;
 }
 
 export const DEFAULT_CANVAS_VIEW: CanvasViewState = {
@@ -55,6 +61,9 @@ export const createUiSlice: StateCreator<
         editingTrackIndex: null,
         clipBrowserOpen: false,
         sidebarVisible: true,
+        rightPanelVisible: false,
+        lyrics: "",
+        lyricsSectionId: null,
         canvasView: { ...DEFAULT_CANVAS_VIEW },
         midiLearnTarget: null,
         midiActivity: false,
@@ -114,6 +123,24 @@ export const createUiSlice: StateCreator<
     toggleClipBrowser: () => {
         set(state => ({
             ui: { ...state.ui, clipBrowserOpen: !state.ui.clipBrowserOpen },
+        }));
+    },
+
+    toggleRightPanel: () => {
+        set(state => ({
+            ui: { ...state.ui, rightPanelVisible: !state.ui.rightPanelVisible },
+        }));
+    },
+
+    setLyrics: (text: string) => {
+        set(state => ({
+            ui: { ...state.ui, lyrics: text },
+        }));
+    },
+
+    assignLyricsToSection: (sectionId: string | null) => {
+        set(state => ({
+            ui: { ...state.ui, lyricsSectionId: sectionId },
         }));
     },
 });
