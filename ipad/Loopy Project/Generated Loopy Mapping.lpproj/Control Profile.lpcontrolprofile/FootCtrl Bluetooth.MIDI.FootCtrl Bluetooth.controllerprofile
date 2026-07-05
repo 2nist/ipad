@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  FootCtrl Bluetooth foot switch bindings on MIDI ch 3 (out of the way of
+	  keyboards, which default to ch 1). Two actions per loop, both HOLD gestures
+	  (this is what the device sends / what tested working on hardware):
+	    CC 20-23 (hold) -> Play/Stop loops 1-4 (track indices 8-11)
+	    CC 24-27 (hold) -> Clear Track loops 1-4 (track indices 8-11)
+	  Trigger format is HEX MIDI bytes with an "h:" hold prefix and no value byte:
+	    h:b214 = hold, CC on ch3 (status b2), controller 0x14 (=CC20).
+	    Clear CCs are +4: 0x18-0x1b = CC24-27.
+	  "Clear Track" is the verified action identifier for erasing a loop.
+	-->
+	<key>Bindings</key>
+	<array>
+		<!-- Pedal 1: hold CC20 = play/stop Loop 1; hold CC24 = clear Loop 1 -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>8</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b214</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>8</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b218</string>
+		</dict>
+		<!-- Pedal 2: hold CC21 = play/stop Loop 2; hold CC25 = clear Loop 2 -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>9</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b215</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>9</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b219</string>
+		</dict>
+		<!-- Pedal 3: hold CC22 = play/stop Loop 3; hold CC26 = clear Loop 3 -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>10</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b216</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>10</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b21a</string>
+		</dict>
+		<!-- Pedal 4: hold CC23 = play/stop Loop 4; hold CC27 = clear Loop 4 -->
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Track Play/Stop</string>
+					<key>Parameters</key>
+					<dict>
+						<key>Type</key>
+						<integer>0</integer>
+					</dict>
+					<key>Subject</key>
+					<string>11</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b217</string>
+		</dict>
+		<dict>
+			<key>Actions</key>
+			<array>
+				<dict>
+					<key>Identifier</key>
+					<string>Clear Track</string>
+					<key>Parameters</key>
+					<dict/>
+					<key>Subject</key>
+					<string>11</string>
+					<key>Timing</key>
+					<string>Sequential</string>
+				</dict>
+			</array>
+			<key>Trigger</key>
+			<string>h:b21b</string>
+		</dict>
+	</array>
+	<key>Device</key>
+	<string>FootCtrl Bluetooth</string>
+	<key>Device Name</key>
+	<string>FootCtrl Bluetooth</string>
+	<key>Type</key>
+	<string>MIDI</string>
+</dict>
+</plist>
