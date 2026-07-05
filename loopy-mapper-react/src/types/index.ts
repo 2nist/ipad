@@ -599,7 +599,7 @@ export interface LooperStore {
         audioContext: AudioContext | null;
         looperEngine: unknown | null;
         clockEngine: TransportClock | null;
-        midiRouter: unknown | null;
+        midiRouter: import('../lib/midiRouter').MidiRouter | null;
         initialized: boolean;
     };
     ui: {

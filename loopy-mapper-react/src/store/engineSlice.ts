@@ -1,16 +1,18 @@
 // ═══════════════════════════════════════════════════════════════════
-// ENGINE SLICE — AudioContext, TransportClock, MidiRouter lifecycle
+// ENGINE SLICE — AudioContext, TransportClock, SynthEngine, MidiRouter lifecycle
 // ═══════════════════════════════════════════════════════════════════
 
 import type { StateCreator } from 'zustand';
 import type { LooperStore } from '../types';
+import { type TransportClockImpl } from '../lib/transportClock';
+import { type MidiRouter } from '../lib/midiRouter';
 
 export interface EngineSlice {
     engines: {
         audioContext: AudioContext | null;
-        looperEngine: unknown | null;
-        clockEngine: unknown | null;
-        midiRouter: unknown | null;
+        looperEngine: unknown | null; // LooperEngine — kept as unknown due to Tone.js type issues
+        clockEngine: TransportClockImpl | null;
+        midiRouter: MidiRouter | null;
         initialized: boolean;
     };
     initializeEngines: () => Promise<void>;
@@ -89,14 +91,16 @@ export const createEngineSlice: StateCreator<
                 URL.revokeObjectURL(url);
             }
 
-            // Step 3: Create worklet nodes for looper tracks (placeholder — existing audio-worklet.ts handles this)
+            // Step 3: Store the initialized AudioContext (LooperEngine/SynthEngine init separately)
             const looperEngine = { type: 'looper', initialized: true, sampleRate };
 
             // Step 4: Initialize MIDI if available
-            let midiRouter = null;
+            let midiRouter: MidiRouter | null = null;
             try {
                 const midiAccess = await navigator.requestMIDIAccess();
-                midiRouter = { type: 'midi', connected: true, midiAccess };
+                // MidiRouter will be fully initialized in useEngineInitialization
+                // after the SynthEngine and TransportClock are created
+                midiRouter = null; // placeholder — actual MidiRouter created in hook
                 set(state => ({
                     ui: { ...state.ui, midiDeviceConnected: true },
                 }));
@@ -108,7 +112,7 @@ export const createEngineSlice: StateCreator<
                 engines: {
                     audioContext,
                     looperEngine,
-                    clockEngine: null, // Clock engine created separately
+                    clockEngine: null, // Clock engine created separately in hook
                     midiRouter,
                     initialized: true,
                 },
