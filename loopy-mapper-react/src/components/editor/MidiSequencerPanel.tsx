@@ -43,9 +43,14 @@ export const MidiSequencerPanel: React.FC = () => {
     setSteps(Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 })));
   }, [moduleId, trackIndex]);
 
-  // Follow transport position
+  // Follow transport position — only trigger live notes when the panel is
+  // open AND the track has no stored clipData (otherwise playSequence handles it).
   useEffect(() => {
     if (!isPlaying) return;
+    if (!isOpen) return;
+    const hasStoredPattern = track?.soundSource.type === 'midiClip' && (track.soundSource as any).clipData?.byteLength > 0;
+    if (hasStoredPattern) return;
+
     const sixteenthBeat = Math.floor(position.beatInBar * 4) % STEPS;
     if (sixteenthBeat !== prevBeatRef.current) {
       prevBeatRef.current = sixteenthBeat;
@@ -62,7 +67,7 @@ export const MidiSequencerPanel: React.FC = () => {
         }, 100);
       }
     }
-  }, [position.beatInBar, isPlaying, steps, track, module]);
+  }, [position.beatInBar, isPlaying, steps, track, module, isOpen]);
 
   if (!isOpen || !module || !track) return null;
 

@@ -72,10 +72,6 @@ export function useEngineInitialization() {
                         // Skip audio input tracks — they don't have sequenced patterns
                         if (src.type === 'audioInput') continue;
 
-                        // Ensure the synth voice is set up for this track
-                        const engine = src.soundEngine;
-                        synthEngine.setVoice(voiceId, engine, track.volume);
-
                         // Check for stored sequencer pattern data (clipData on midiClip sources)
                         const clipData = (src as any).clipData as ArrayBuffer | undefined;
                         if (!clipData || clipData.byteLength === 0) continue;
@@ -90,6 +86,13 @@ export function useEngineInitialization() {
                             }>;
 
                             if (events.length === 0) continue;
+
+                            // Only (re)create the voice if it doesn't exist yet, to avoid
+                            // destroying/recreating Tone.Sampler instances whose buffers are
+                            // already loaded.
+                            if (!synthEngine.isVoiceReady(voiceId)) {
+                                synthEngine.setVoice(voiceId, src.soundEngine, track.volume);
+                            }
 
                             // Stop any existing sequence for this voice first
                             synthEngine.stopSequence(voiceId);

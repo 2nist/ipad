@@ -225,9 +225,13 @@ export class LooperEngine {
      * recreation). We verify by actually constructing a test AudioWorkletNode,
      * and fall back to a fresh context from Tone.js if needed.
      */
-    private resolveAudioContext(): AudioContext | null {
+    private async resolveAudioContext(): Promise<AudioContext | null> {
         // First try the cached context with a worklet node smoke test.
         if (this.isValidAudioContext(this.audioContext)) {
+            // Chrome requires the context to be running before creating worklet nodes.
+            if (this.audioContext!.state === 'suspended') {
+                await this.audioContext!.resume();
+            }
             try {
                 const test = new AudioWorkletNode(this.audioContext!, "looper-processor");
                 test.disconnect();
@@ -244,9 +248,13 @@ export class LooperEngine {
         try {
             const raw = Tone.getContext().rawContext;
             if (this.isValidAudioContext(raw)) {
-                const test = new AudioWorkletNode(raw as AudioContext, "looper-processor");
+                const ctx = raw as AudioContext;
+                if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                }
+                const test = new AudioWorkletNode(ctx, "looper-processor");
                 test.disconnect();
-                this.audioContext = raw as AudioContext;
+                this.audioContext = ctx;
                 return this.audioContext;
             }
         } catch {
@@ -258,7 +266,7 @@ export class LooperEngine {
 
     /** Create an AudioWorkletNode for a track. */
     private async createTrackNode(trackId: number): Promise<void> {
-        const ctx = this.resolveAudioContext();
+        const ctx = await this.resolveAudioContext();
         if (!ctx) {
             console.warn(`[LooperEngine] Skipping track ${trackId} — no usable AudioContext`);
             return;
