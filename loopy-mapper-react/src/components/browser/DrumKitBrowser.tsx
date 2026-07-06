@@ -32,18 +32,53 @@ export const DrumKitBrowser: React.FC = () => {
   const [search, setSearch] = useState('');
   const [previewingSample, setPreviewingSample] = useState<string | null>(null);
   const [previewVoice, setPreviewVoice] = useState<any>(null);
+  const [backendDown, setBackendDown] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   // Get the currently editing track from the midi editor state (or the OUT menu context)
   const editingModuleId = useLooperStore(s => s.ui.midiEditorModuleId);
   const editingTrackIdx = useLooperStore(s => s.ui.midiEditorTrackIndex);
 
   // Fetch kits on mount
-  useEffect(() => {
-    fetch(`${API_BASE}/api/drums`)
-      .then(r => r.json())
-      .then(data => { setKits(data); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
+  const fetchKits = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setBackendDown(false);
+    try {
+      const r = await fetch(`${API_BASE}/api/drums`);
+      if (!r.ok) {
+        throw new Error(`Server returned ${r.status}`);
+      }
+      const data = await r.json();
+      setKits(data);
+    } catch (err: any) {
+      // Detect connection-refused (backend not running) vs. other fetch errors
+      if (
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('ERR_CONNECTION_REFUSED') ||
+        err.name === 'TypeError'
+      ) {
+        setBackendDown(true);
+        setError(null);
+      } else {
+        setError(err.message || 'Unknown error');
+        setBackendDown(false);
+      }
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchKits();
+  }, [fetchKits]);
+
+  // Retry when backend was down
+  const retryConnect = useCallback(async () => {
+    setRetrying(true);
+    await fetchKits();
+    setRetrying(false);
+  }, [fetchKits]);
 
   // Fetch samples when a kit is selected
   const selectKit = useCallback(async (kitName: string) => {
@@ -140,10 +175,50 @@ export const DrumKitBrowser: React.FC = () => {
     ? kits.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))
     : kits;
 
-  if (loading) {
+  if (loading && !backendDown) {
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
+
+  // Backend not running — show actionable guidance
+  if (backendDown) {
+    const pythonCmd = 'cd loopy-mapper-react && uvicorn backend.main:app --reload --port 8766';
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 px-4">
+        <div className="w-10 h-10 rounded-full bg-amber-900/40 flex items-center justify-center">
+          <Drum size={20} className="text-amber-400 opacity-70" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-amber-200 mb-1">Drum Server Not Running</p>
+          <p className="text-[11px] text-zinc-400 max-w-xs leading-relaxed">
+            The backend API that serves drum samples is not reachable at{' '}
+            <code className="text-amber-400/80 bg-zinc-800 px-1 rounded">{API_BASE}</code>.
+            Start it in another terminal:
+          </p>
+          <pre className="mt-2 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[10px] text-zinc-300 text-left overflow-x-auto select-all">
+{/* eslint-disable-next-line no-irregular-whitespace */}
+{`uvicorn backend.main:app --reload --port 8766`}
+          </pre>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={retryConnect}
+            disabled={retrying}
+            className="px-3 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-xs text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {retrying && <Loader2 size={12} className="animate-spin" />}
+            {retrying ? 'Retrying...' : 'Retry'}
+          </button>
+          <button
+            onClick={() => setBackendDown(false)}
+            className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-400 transition-colors"
+          >
+            Dismiss
+          </button>
+        </div>
       </div>
     );
   }

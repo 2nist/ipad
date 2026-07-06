@@ -154,39 +154,85 @@ export class LooperEngine {
         }
     }
 
-    /** Initialize the audio context and processor. Must be called from a user gesture. */
-    async initialize(): Promise<void> {
+    /**
+     * Initialize the audio context and processor.
+     * Accepts an optional external AudioContext — when provided it is used
+     * directly instead of obtaining one from Tone.js, which avoids subtle
+     * issues where Tone.getContext().rawContext returns a stale or
+     * incompatible object (e.g. on iOS/Safari or when the context is
+     * suspended at creation time).
+     */
+    async initialize(externalAudioContext?: AudioContext): Promise<void> {
         if (this.initialized) return;
 
-        await Tone.start();
-        this.audioContext = Tone.getContext().rawContext as AudioContext;
+        // Prefer an externally-provided AudioContext (from the
+        // useEngineInitialization hook which already awaits Tone.start()).
+        // Fall back to obtaining it ourselves.
+        if (externalAudioContext && this.isValidAudioContext(externalAudioContext)) {
+            this.audioContext = externalAudioContext;
+        } else {
+            await Tone.start();
+            const raw = Tone.getContext().rawContext;
+            if (!this.isValidAudioContext(raw)) {
+                throw new Error(
+                    "Invalid AudioContext from Tone.js — the browser may have " +
+                    "blocked audio context creation. Ensure a user gesture " +
+                    "(click/tap) precedes audio initialization."
+                );
+            }
+            this.audioContext = raw as AudioContext;
+        }
 
         // Load the AudioWorkletProcessor from the public file.
         // Vite serves files from /public at the root.
         try {
             await this.audioContext.audioWorklet.addModule("/looper-processor.js");
-            this.initialized = true;
         } catch (err) {
             console.warn("Loading looper-processor.js from root failed, trying blob fallback...");
             try {
-                await this.audioContext.audioWorklet.addModule(URL.createObjectURL(
-                    new Blob([PROCESSOR_CODE], { type: "application/javascript" })
-                ));
-                this.initialized = true;
+                const blob = new Blob([PROCESSOR_CODE], { type: "application/javascript" });
+                this.processorBlobUrl = URL.createObjectURL(blob);
+                await this.audioContext.audioWorklet.addModule(this.processorBlobUrl);
             } catch (err2) {
                 console.error("AudioWorklet initialization failed:", err2);
                 throw new Error("AudioWorklet not supported in this browser");
             }
         }
 
+        this.initialized = true;
+
         // Create the worklet nodes for each track
         for (let i = 0; i < this.maxTracks; i++) {
             await this.createTrackNode(i);
         }
     }
+
+    /** Verify the provided value is a usable AudioContext. */
+    private isValidAudioContext(ctx: unknown): ctx is AudioContext {
+        return (
+            ctx !== null &&
+            ctx !== undefined &&
+            typeof (ctx as AudioContext).sampleRate === "number" &&
+            typeof (ctx as AudioContext).destination === "object" &&
+            (ctx as AudioContext).audioWorklet !== undefined
+        );
+    }
+
     /** Create an AudioWorkletNode for a track. */
     private async createTrackNode(trackId: number): Promise<void> {
-        if (!this.audioContext) return;
+        if (!this.audioContext) {
+            console.warn(`[LooperEngine] Skipping track ${trackId} — no AudioContext`);
+            return;
+        }
+
+        // Defensive check: ensure the context is still alive and usable
+        if (!this.isValidAudioContext(this.audioContext)) {
+            console.error(
+                `[LooperEngine] Cannot create AudioWorkletNode — ` +
+                `AudioContext is invalid or has been closed.`
+            );
+            return;
+        }
 
         const node = new AudioWorkletNode(this.audioContext, "looper-processor");
         const gainNode = this.audioContext.createGain();
@@ -301,7 +347,6 @@ export class LooperEngine {
     /** Send a raw MIDI command to trigger tracks (for WebMIDI integration). */
     handleMidiCommand(status: number, data1: number, data2: number): void {
         const msgType = status & 0xf0;
-        const channel = (status & 0x0f) + 1;
         const velocity = data2 / 127;
 
         // Map note-on (0x90) with velocity > 0 to track triggers
@@ -315,6 +360,7 @@ export class LooperEngine {
 
         // Map CC to volume (CC7 = channel volume)
         if (msgType === 0xb0 && data1 === 7) {
+            const channel = (status & 0x0f) + 1;
             const trackId = channel - 1;
             if (trackId >= 0 && trackId < this.maxTracks) {
                 this.setVolume(trackId, velocity);

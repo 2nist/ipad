@@ -35,8 +35,8 @@ export function useEngineInitialization() {
             const audioContext = Tone.getContext().rawContext as AudioContext;
             console.log('[Init] Tone.js started, AudioContext:', audioContext.state);
 
-            // Step 3: Initialize LooperEngine (AudioWorklet)
-            await looperEngine.initialize();
+            // Step 3: Initialize LooperEngine (AudioWorklet) with the shared AudioContext
+            await looperEngine.initialize(audioContext);
             console.log('[Init] LooperEngine initialized');
 
             // Step 4: Initialize SynthEngine (Tone.js PolySynth)
