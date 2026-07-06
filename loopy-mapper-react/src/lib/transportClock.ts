@@ -94,6 +94,12 @@ export class TransportClockImpl implements TransportClock {
 
         console.log('[Clock] Starting at BPM:', this.bpm);
 
+        // Sync Tone.Transport so scheduled callbacks (synthEngine.playSequence)
+        // fire in time with our rAF loop. BPM and position must match.
+        Tone.Transport.bpm.value = this.bpm;
+        Tone.Transport.position = '0:0:0';
+        Tone.Transport.start();
+
         // Notify onStart
         const pos = this.getPosition();
         for (const entry of this.subscribers) {
@@ -112,6 +118,12 @@ export class TransportClockImpl implements TransportClock {
         this.lastFrameTime = null;
         this.lastBeatFloor = -1;
         this.lastBarFloor = -1;
+
+        // Stop Tone.Transport and clear all scheduled events so patterns don't
+        // continue playing on the next start with stale callbacks.
+        Tone.Transport.stop();
+        Tone.Transport.position = '0:0:0';
+        Tone.Transport.cancel(0);
 
         const pos = this.getPosition();
         for (const entry of this.subscribers) {

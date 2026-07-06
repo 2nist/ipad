@@ -55,6 +55,63 @@ export function useEngineInitialization() {
             const metronomeOnBeat0Note = 72; // High C (accent beat 1)
             const metronomeOtherBeatNote = 60; // Middle C (weak beats)
 
+            // Track active pattern sequences for cleanup on stop/pause
+            const activeSequenceVoices = new Set<string>();
+
+            const scheduleTrackPatterns = () => {
+                const store = useLooperStore.getState();
+                const modules = store.song.modules;
+
+                for (const mod of modules) {
+                    if (mod.type === 'arrangement') continue;
+
+                    for (const track of mod.tracks) {
+                        const voiceId = `${mod.id}:${track.index}`;
+                        const src = track.soundSource;
+
+                        // Skip audio input tracks — they don't have sequenced patterns
+                        if (src.type === 'audioInput') continue;
+
+                        // Ensure the synth voice is set up for this track
+                        const engine = src.soundEngine;
+                        synthEngine.setVoice(voiceId, engine, track.volume);
+
+                        // Check for stored sequencer pattern data (clipData on midiClip sources)
+                        const clipData = (src as any).clipData as ArrayBuffer | undefined;
+                        if (!clipData || clipData.byteLength === 0) continue;
+
+                        try {
+                            const decoded = new TextDecoder().decode(clipData);
+                            const events = JSON.parse(decoded) as Array<{
+                                deltaTime: number;
+                                type: 'noteOn' | 'noteOff';
+                                note: number;
+                                velocity: number;
+                            }>;
+
+                            if (events.length === 0) continue;
+
+                            // Stop any existing sequence for this voice first
+                            synthEngine.stopSequence(voiceId);
+
+                            // Schedule the pattern for looping playback via Tone.Transport
+                            synthEngine.playSequence(voiceId, events, true);
+                            activeSequenceVoices.add(voiceId);
+                            console.log(`[Clock] Scheduled pattern for ${voiceId} — ${events.length} events`);
+                        } catch (err) {
+                            console.warn(`[Clock] Failed to decode pattern for ${voiceId}:`, err);
+                        }
+                    }
+                }
+            };
+
+            const stopAllSequences = () => {
+                for (const voiceId of activeSequenceVoices) {
+                    synthEngine.stopSequence(voiceId);
+                }
+                activeSequenceVoices.clear();
+            };
+
             clock.registerSubscriber({
                 id: 'engine-sync',
                 onStart: (_pos: ClockPosition) => {
@@ -68,9 +125,13 @@ export function useEngineInitialization() {
                             position: clock.getPosition(),
                         },
                     });
+
+                    // Schedule all stored track patterns for playback
+                    scheduleTrackPatterns();
                 },
                 onStop: (_pos: ClockPosition) => {
                     console.log('[Clock] Transport stopped');
+                    stopAllSequences();
                     useLooperStore.setState({
                         transport: {
                             ...useLooperStore.getState().transport,
