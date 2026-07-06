@@ -326,6 +326,10 @@ export interface TransportClock {
     scheduleAt(beat: number, callback: () => void): void;
     start(): void;
     stop(): void;
+    /** Stop the scheduler but preserve position — pairs with resume(). */
+    pause(): void;
+    /** Resume playback from the position left by pause(). */
+    resume(): void;
     toggle(): void;
     setBpm(bpm: number): void;
     tapTempo(): void;

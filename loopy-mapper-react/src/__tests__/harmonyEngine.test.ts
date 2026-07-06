@@ -232,6 +232,8 @@ describe('TransportClockImpl', () => {
     const mockAudioContext = {
         currentTime: 0,
         sampleRate: 44100,
+        state: 'running',
+        resume: async () => { },
         audioWorklet: { addModule: async () => { } },
     } as unknown as AudioContext;
 
@@ -276,6 +278,67 @@ describe('TransportClockImpl', () => {
         expect(clock.beatsPerBar).toBe(3); // 6/8 = 6 * 0.5 = 3
         clock.setTimeSignature({ numerator: 3, denominator: 4 });
         expect(clock.beatsPerBar).toBe(3); // 3/4
+    });
+
+    test('advance() accumulates beats at the current BPM', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120); // 2 beats/sec
+        clock.start();
+        clock.advance(1000); // 1 second
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+    });
+
+    test('changing BPM mid-playback does not rescale beats already played', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120); // 2 beats/sec
+        clock.start();
+        clock.advance(1000); // +2 beats @ 120bpm = 2
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        clock.setBpm(60); // 1 beat/sec — must not retroactively rescale the 2 beats already played
+        clock.advance(1000); // +1 beat @ 60bpm
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(3, 5);
+    });
+
+    test('pause() preserves position and resume() continues from it', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120);
+        clock.start();
+        clock.advance(1000); // 2 beats
+        clock.pause();
+        expect(clock.isPlaying).toBe(false);
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        // Paused: advance() must be a no-op (nothing is "playing")
+        clock.advance(5000);
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        clock.resume();
+        expect(clock.isPlaying).toBe(true);
+        clock.advance(500); // +1 beat @ 120bpm
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(3, 5);
+    });
+
+    test('stop() resets position back to zero', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120);
+        clock.start();
+        clock.advance(2000); // 4 beats
+        clock.stop();
+        expect(clock.isPlaying).toBe(false);
+        expect(clock.getPosition().absoluteBeat).toBe(0);
     });
 });
 
