@@ -164,7 +164,14 @@ export class SynthEngine {
         if (!synth) return;
 
         const noteName = typeof note === "number" ? this.midiToNote(note) : note;
-        synth.triggerAttack(noteName, time, velocity);
+        try {
+            synth.triggerAttack(noteName, time, velocity);
+        } catch (err) {
+            // Tone.Sampler throws if its buffer hasn't loaded yet — not
+            // recovering here would crash React and blank the screen.
+            console.warn(`[SynthEngine] triggerAttack failed for ${voiceId} (sample may not be loaded):`, err);
+            return;
+        }
         this.onNoteCallback?.(voiceId, "noteOn", typeof note === "number" ? note : 60, velocity);
     }
 
@@ -174,7 +181,11 @@ export class SynthEngine {
         if (!synth) return;
 
         const noteName = typeof note === "number" ? this.midiToNote(note) : note;
-        synth.triggerRelease(noteName, time);
+        try {
+            synth.triggerRelease(noteName, time);
+        } catch {
+            // Silently ignore — if triggerAttack was also blocked, there's nothing to release.
+        }
         this.onNoteCallback?.(voiceId, "noteOff", typeof note === "number" ? note : 60, 0);
     }
 
@@ -232,6 +243,20 @@ export class SynthEngine {
                 this.playSequence(voiceId, events, true);
             }, `+${currentTime}`);
         }
+    }
+
+    /**
+     * Check whether a sampler voice has finished loading its buffers.
+     * Returns true for PolySynth voices (they don't need loading) and samplers
+     * whose onload callback has fired.
+     */
+    isVoiceReady(voiceId: SynthVoiceId): boolean {
+        const synth = this.voices.get(voiceId);
+        if (!synth) return false;
+        // PolySynth instances are always ready; Sampler instances expose .loaded
+        if (synth instanceof Tone.PolySynth) return true;
+        if (synth instanceof Tone.Sampler) return (synth as any).loaded === true;
+        return false;
     }
 
     /** Stop all scheduled events for a voice. */
