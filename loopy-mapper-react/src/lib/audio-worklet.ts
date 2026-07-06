@@ -218,28 +218,58 @@ export class LooperEngine {
         );
     }
 
+    /**
+     * Resolve a usable AudioContext for creating worklet nodes.
+     * The cached context can pass isValidAudioContext() checks but still have
+     * its C++ backing detached (common with Vite HMR or Tone.js context
+     * recreation). We verify by actually constructing a test AudioWorkletNode,
+     * and fall back to a fresh context from Tone.js if needed.
+     */
+    private resolveAudioContext(): AudioContext | null {
+        // First try the cached context with a worklet node smoke test.
+        if (this.isValidAudioContext(this.audioContext)) {
+            try {
+                const test = new AudioWorkletNode(this.audioContext!, "looper-processor");
+                test.disconnect();
+                return this.audioContext;
+            } catch {
+                console.warn(
+                    "[LooperEngine] Cached AudioContext rejected new AudioWorkletNode — " +
+                    "refreshing from Tone.js..."
+                );
+            }
+        }
+
+        // Fall back to a fresh context from Tone.js.
+        try {
+            const raw = Tone.getContext().rawContext;
+            if (this.isValidAudioContext(raw)) {
+                const test = new AudioWorkletNode(raw as AudioContext, "looper-processor");
+                test.disconnect();
+                this.audioContext = raw as AudioContext;
+                return this.audioContext;
+            }
+        } catch {
+            console.warn("[LooperEngine] Tone.js rawContext also unusable");
+        }
+
+        return null;
+    }
+
     /** Create an AudioWorkletNode for a track. */
     private async createTrackNode(trackId: number): Promise<void> {
-        if (!this.audioContext) {
-            console.warn(`[LooperEngine] Skipping track ${trackId} — no AudioContext`);
+        const ctx = this.resolveAudioContext();
+        if (!ctx) {
+            console.warn(`[LooperEngine] Skipping track ${trackId} — no usable AudioContext`);
             return;
         }
 
-        // Defensive check: ensure the context is still alive and usable
-        if (!this.isValidAudioContext(this.audioContext)) {
-            console.error(
-                `[LooperEngine] Cannot create AudioWorkletNode — ` +
-                `AudioContext is invalid or has been closed.`
-            );
-            return;
-        }
-
-        const node = new AudioWorkletNode(this.audioContext, "looper-processor");
-        const gainNode = this.audioContext.createGain();
+        const node = new AudioWorkletNode(ctx, "looper-processor");
+        const gainNode = ctx.createGain();
         gainNode.gain.value = this.tracks.get(trackId)?.volume || 0.75;
 
         node.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        gainNode.connect(ctx.destination);
 
         this.nodes.set(trackId, node);
         this.gainNodes.set(trackId, gainNode);
