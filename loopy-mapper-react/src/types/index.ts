@@ -339,6 +339,8 @@ export interface TransportClock {
     scheduleTick(offset: number, callback: () => void): void;
     registerSubscriber(subscriber: ClockSubscriber): void;
     unregisterSubscriber(id: string): void;
+    /** Sync the clock's section-relative bookkeeping (bar count / id) to the active section. */
+    setSectionContext(bars: number, sectionId: string): void;
 }
 
 export type ClockSource = "internal" | "midiClock";
@@ -675,7 +677,7 @@ export interface LooperStore {
     };
     engines: {
         audioContext: AudioContext | null;
-        looperEngine: unknown | null;
+        looperEngine: import('../lib/audio-worklet').LooperEngine | null;
         clockEngine: TransportClock | null;
         midiRouter: import('../lib/midiRouter').MidiRouter | null;
         initialized: boolean;

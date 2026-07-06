@@ -3,16 +3,16 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import type { StateCreator } from 'zustand';
-import type { LooperStore } from '../types';
-import { type TransportClockImpl } from '../lib/transportClock';
+import type { LooperStore, TransportClock } from '../types';
+import { type LooperEngine } from '../lib/audio-worklet';
 import { type MidiRouter } from '../lib/midiRouter';
 
 export interface EngineSlice {
     engines: {
         audioContext: AudioContext | null;
-        looperEngine: unknown | null;
-        clockEngine: unknown | null;
-        midiRouter: unknown | null;
+        looperEngine: LooperEngine | null;
+        clockEngine: TransportClock | null;
+        midiRouter: MidiRouter | null;
         initialized: boolean;
     };
     initializeEngines: () => Promise<void>;

@@ -82,8 +82,7 @@ export const createTransportSlice: StateCreator<
             // Make sure the clock's internal section bookkeeping (bar count / id) matches
             // the section we're actually about to play, before starting it.
             if (activeSection) {
-                (engines.clockEngine as { setSectionContext?: (bars: number, sectionId: string) => void })
-                    .setSectionContext?.(activeSection.bars, activeSection.id);
+                engines.clockEngine.setSectionContext(activeSection.bars, activeSection.id);
             }
 
             engines.clockEngine.start();
@@ -179,8 +178,7 @@ export const createTransportSlice: StateCreator<
         // clock always wrapped every 8 bars regardless of actual section length,
         // and this store update got overwritten by the next onTick from the clock.
         const { engines } = get();
-        (engines.clockEngine as { setSectionContext?: (bars: number, sectionId: string) => void })
-            ?.setSectionContext?.(section.bars, section.id);
+        engines.clockEngine?.setSectionContext(section.bars, section.id);
 
         set({
             transport: {
