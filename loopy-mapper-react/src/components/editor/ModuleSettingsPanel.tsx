@@ -216,7 +216,7 @@ export const ModuleSettingsPanel: React.FC<{ moduleId: string }> = ({ moduleId }
                   onChange={e => {
                     if (!module.expression) return;
                     updateModule(moduleId, {
-                      expression: { ...module.expression, trigger: { ...module.expression.trigger, everyN: Number(e.target.value) } } as any,
+                      expression: { ...module.expression, trigger: { ...module.expression.trigger, everyN: Number(e.target.value) } },
                     });
                   }}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-300 focus:outline-none focus:border-blue-500 text-xs"
@@ -227,11 +227,11 @@ export const ModuleSettingsPanel: React.FC<{ moduleId: string }> = ({ moduleId }
                   <input
                     type="number"
                     min={1} max={64}
-                    value={(module.expression as any).durationBeats ?? 4}
+                    value={module.expression.durationBeats ?? 4}
                     onChange={e => {
-                      if (!module.expression) return;
+                      if (!module.expression || module.expression.type === 'variation') return;
                       updateModule(moduleId, {
-                        expression: { ...module.expression, durationBeats: Number(e.target.value) } as any,
+                        expression: { ...module.expression, durationBeats: Number(e.target.value) },
                       });
                     }}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-300 focus:outline-none focus:border-blue-500 text-xs"
@@ -243,11 +243,11 @@ export const ModuleSettingsPanel: React.FC<{ moduleId: string }> = ({ moduleId }
                   <input
                     type="number"
                     min={1} max={64}
-                    value={(module.expression as any).durationBars ?? 4}
+                    value={module.expression.durationBars ?? 4}
                     onChange={e => {
-                      if (!module.expression) return;
+                      if (!module.expression || module.expression.type !== 'variation') return;
                       updateModule(moduleId, {
-                        expression: { ...module.expression, durationBars: Number(e.target.value) } as any,
+                        expression: { ...module.expression, durationBars: Number(e.target.value) },
                       });
                     }}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-300 focus:outline-none focus:border-blue-500 text-xs"

@@ -114,6 +114,7 @@ const TrackEditor: React.FC<{
 
   const sourceType = track.soundSource.type;
   const isSample = sourceType === 'sample';
+  const sampleSource = track.soundSource.type === 'sample' ? track.soundSource : null;
 
   const handleSourceChange = (type: SoundSource['type']) => {
     switch (type) {
@@ -204,17 +205,17 @@ const TrackEditor: React.FC<{
             />
           </div>
 
-          {isSample && (
+          {sampleSource && (
             <div className="flex items-center gap-1.5 bg-zinc-950 p-0.5 rounded border border-zinc-800">
               <button
-                onClick={() => setSoundSource(module.id, trackIndex, { ...track.soundSource, triggerMode: 'oneShot' } as any)}
-                className={`px-2 py-0.5 text-[9px] font-bold rounded-sm transition-colors ${(track.soundSource as any).triggerMode === 'oneShot' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                onClick={() => setSoundSource(module.id, trackIndex, { ...sampleSource, triggerMode: 'oneShot' })}
+                className={`px-2 py-0.5 text-[9px] font-bold rounded-sm transition-colors ${sampleSource.triggerMode === 'oneShot' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 1-SHOT
               </button>
               <button
-                onClick={() => setSoundSource(module.id, trackIndex, { ...track.soundSource, triggerMode: 'gate' } as any)}
-                className={`px-2 py-0.5 text-[9px] font-bold rounded-sm transition-colors ${(track.soundSource as any).triggerMode === 'gate' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                onClick={() => setSoundSource(module.id, trackIndex, { ...sampleSource, triggerMode: 'gate' })}
+                className={`px-2 py-0.5 text-[9px] font-bold rounded-sm transition-colors ${sampleSource.triggerMode === 'gate' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 GATE
               </button>
@@ -472,10 +473,8 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
 
             <button
               onClick={() => {
-                // Open module editor in right panel
-                const store = useLooperStore.getState();
-                store.setEditorPanel({ type: 'module', moduleId: module.id });
-                store.ui.rightPanelVisible = true;
+                // setEditorPanel makes the right panel visible as part of opening it
+                useLooperStore.getState().setEditorPanel({ type: 'module', moduleId: module.id });
               }}
               className="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-blue-400 transition-colors"
               title="Module Settings"
@@ -549,9 +548,9 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
         {/* ROW 2: TRACK SELECTORS — dynamic grid based on track count */}
         <div className={`p-2 grid gap-2 bg-zinc-900/50 ${module.tracks.length <= 4 ? 'grid-cols-4' : 'grid-cols-4'}`}>
           {module.tracks.map((track, i) => {
-            const sourceType = track.soundSource.type;
-            const hasSample = sourceType === 'sample' && (track.soundSource as any).sampleId !== null;
-            const hasClip = sourceType === 'midiClip' && (track.soundSource as any).clipId !== null;
+            const trackSource = track.soundSource;
+            const hasSample = trackSource.type === 'sample' && trackSource.sampleId !== null;
+            const hasClip = trackSource.type === 'midiClip' && trackSource.clipId !== null;
             const isLoaded = hasClip || hasSample;
             const isActiveSeqTrack = activeSeqModule === module.id && activeSeqTrack === i;
 

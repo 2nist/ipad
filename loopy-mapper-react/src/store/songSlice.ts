@@ -7,10 +7,13 @@ import { v4 as uuid } from 'uuid';
 import type {
     SongObject, SongMetadata, SongSection, ModuleCard, ModulePreset,
     ModuleTrackConfig, SoundSource, SoundEngine, ChordStep, SectionMarker, TransitionMode,
-    LooperStore, LooperStoreActions,
+    MidiBinding, LooperStore, LooperStoreActions,
+    MidiClipSource, LiveMidiSource, SampleSource,
 } from '../types';
 import { getPresetById, MODULE_PRESETS, nextPatternName, resetPatternNames, RHYTHM_MODE_COLORS } from './presets';
 import { synthEngine } from '../lib/synthEngine';
+import { DEFAULT_UI } from './uiSlice';
+import { DEFAULT_TRANSPORT } from './transportSlice';
 
 const DEFAULT_CANVAS_VIEW = {
     viewLevel: "sectionsOnly" as const,
@@ -54,6 +57,8 @@ export interface SongSlice {
     addSectionMarker: LooperStoreActions['addSectionMarker'];
     removeSectionMarker: LooperStoreActions['removeSectionMarker'];
     setSongMetadata: LooperStoreActions['setSongMetadata'];
+    addMidiBinding: LooperStoreActions['addMidiBinding'];
+    setMidiBindings: LooperStoreActions['setMidiBindings'];
     updateTrack: LooperStoreActions['updateTrack'];
     assignClipToTrack: LooperStoreActions['assignClipToTrack'];
     setSoundSource: LooperStoreActions['setSoundSource'];
@@ -284,6 +289,21 @@ export const createSongSlice: StateCreator<
         }));
     },
 
+    addMidiBinding: (binding: MidiBinding) => {
+        set(state => ({
+            song: {
+                ...state.song,
+                midiBindings: [...state.song.midiBindings, binding],
+            },
+        }));
+    },
+
+    setMidiBindings: (bindings: MidiBinding[]) => {
+        set(state => ({
+            song: { ...state.song, midiBindings: bindings },
+        }));
+    },
+
     updateTrack: (moduleId: string, trackIndex: number, updates: Partial<ModuleTrackConfig>) => {
         set(state => ({
             song: {
@@ -312,13 +332,7 @@ export const createSongSlice: StateCreator<
                             ...m,
                             tracks: m.tracks.map(t =>
                                 t.index === trackIndex && t.soundSource.type === "midiClip"
-                                    ? {
-                                        ...t,
-                                        soundSource: {
-                                            ...(t.soundSource as { type: "midiClip" }),
-                                            clipId,
-                                        } as any,
-                                    }
+                                    ? { ...t, soundSource: { ...t.soundSource, clipId } }
                                     : t
                             ),
                         }
@@ -354,14 +368,17 @@ export const createSongSlice: StateCreator<
                     m.id === moduleId
                         ? {
                             ...m,
-                            tracks: m.tracks.map(t =>
-                                t.index === trackIndex
-                                    ? {
-                                        ...t,
-                                        soundSource: { ...t.soundSource, soundEngine: engine } as any,
-                                    }
-                                    : t
-                            ),
+                            tracks: m.tracks.map(t => {
+                                if (t.index !== trackIndex) return t;
+                                const source = t.soundSource;
+                                // audioInput has no soundEngine slot; sample only accepts a SamplerEngine
+                                if (source.type === "audioInput") return t;
+                                if (source.type === "sample" && engine.type !== "sampler") return t;
+                                return {
+                                    ...t,
+                                    soundSource: { ...source, soundEngine: engine } as MidiClipSource | LiveMidiSource | SampleSource,
+                                };
+                            }),
                         }
                         : m
                 ),
@@ -377,49 +394,9 @@ export const createSongSlice: StateCreator<
         }
         set({
             song,
-            transport: {
-                isPlaying: false,
-                isRecording: false,
-                position: {
-                    absoluteBeat: 0, barInSection: 0, beatInBar: 0, tickInBeat: 0,
-                    sectionId: "", beatInSection: 0, elapsedBeatsInSection: 0, remainingBeatsInSection: 0,
-                },
-                activeSectionId: null,
-                activeSectionIndex: 0,
-            },
+            transport: { ...DEFAULT_TRANSPORT },
             moduleStates: {},
-            ui: {
-                activeModal: { type: "none" } as const,
-                activeEditorPanel: { type: "none" } as const,
-                editingModuleId: null,
-                editingTrackIndex: null,
-                clipBrowserOpen: false,
-                sidebarVisible: true,
-                rightPanelVisible: false,
-                lyrics: "",
-                lyricsSectionId: null,
-                canvasView: {
-                    viewLevel: "sectionsOnly" as const,
-                    selectedSectionIds: [],
-                    selectedModuleIds: [],
-                    zoomLevel: 50,
-                    scrollPosition: 0,
-                    chordEditorOpen: false,
-                    chordEditorBarIndex: null,
-                    isPlaying: false,
-                    playheadPosition: 0,
-                },
-                midiLearnTarget: null,
-                midiActivity: false,
-                midiDeviceConnected: false,
-                audioInitialized: false,
-                canvasLockSize: false,
-                canvasLockPosition: false,
-                assigningModuleId: null,
-                midiEditorOpen: false,
-                midiEditorModuleId: null,
-                midiEditorTrackIndex: null,
-            },
+            ui: { ...DEFAULT_UI, rightPanelVisible: false },
         });
     },
 
@@ -428,16 +405,7 @@ export const createSongSlice: StateCreator<
     loadSong: (song: SongObject) => {
         set({
             song,
-            transport: {
-                isPlaying: false,
-                isRecording: false,
-                position: {
-                    absoluteBeat: 0, barInSection: 0, beatInBar: 0, tickInBeat: 0,
-                    sectionId: "", beatInSection: 0, elapsedBeatsInSection: 0, remainingBeatsInSection: 0,
-                },
-                activeSectionId: null,
-                activeSectionIndex: 0,
-            },
+            transport: { ...DEFAULT_TRANSPORT },
         });
     },
 

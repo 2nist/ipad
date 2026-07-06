@@ -3,7 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import type { StateCreator } from 'zustand';
-import type { LooperStore, ClockPosition, TransitionMode } from '../types';
+import type { ClockPosition, TransitionMode } from '../types';
+import type { LooperStoreType } from './store';
 
 export interface TransportSlice {
     transport: {
@@ -36,22 +37,26 @@ const DEFAULT_POSITION: ClockPosition = {
     remainingBeatsInSection: 0,
 };
 
+// Single source of truth for a reset transport state — reused by songSlice's
+// newSong/loadSong so the reset shape can't drift from the initial state.
+export const DEFAULT_TRANSPORT: TransportSlice['transport'] = {
+    isPlaying: false,
+    isRecording: false,
+    position: { ...DEFAULT_POSITION },
+    activeSectionId: null,
+    activeSectionIndex: 0,
+};
+
 // Track last 5 tap timestamps for tap tempo
 let tapTempoHistory: number[] = [];
 
 export const createTransportSlice: StateCreator<
-    LooperStore,
+    LooperStoreType,
     [],
     [],
     TransportSlice
 > = (set, get) => ({
-    transport: {
-        isPlaying: false,
-        isRecording: false,
-        position: { ...DEFAULT_POSITION },
-        activeSectionId: null,
-        activeSectionIndex: 0,
-    },
+    transport: { ...DEFAULT_TRANSPORT, position: { ...DEFAULT_POSITION } },
 
     globalPlay: () => {
         const { engines } = get();
@@ -77,8 +82,7 @@ export const createTransportSlice: StateCreator<
             // Make sure the clock's internal section bookkeeping (bar count / id) matches
             // the section we're actually about to play, before starting it.
             if (activeSection) {
-                (engines.clockEngine as { setSectionContext?: (bars: number, sectionId: string) => void })
-                    .setSectionContext?.(activeSection.bars, activeSection.id);
+                engines.clockEngine.setSectionContext(activeSection.bars, activeSection.id);
             }
 
             engines.clockEngine.start();
@@ -174,8 +178,7 @@ export const createTransportSlice: StateCreator<
         // clock always wrapped every 8 bars regardless of actual section length,
         // and this store update got overwritten by the next onTick from the clock.
         const { engines } = get();
-        (engines.clockEngine as { setSectionContext?: (bars: number, sectionId: string) => void })
-            ?.setSectionContext?.(section.bars, section.id);
+        engines.clockEngine?.setSectionContext(section.bars, section.id);
 
         set({
             transport: {

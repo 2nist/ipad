@@ -5,8 +5,9 @@
 import { HarmonyEngineCore, SCALE_INTERVALS, CHORD_INTERVALS, NOTE_NAMES } from '../lib/harmonyEngine';
 import { VoicingEngine } from '../lib/voicingEngine';
 import { TransportClockImpl } from '../lib/transportClock';
+import { beatsPerBar, barDurationMs } from '../lib/arrangementEngine';
 import { rhythmShapeFromTimeSig } from '../components/modules/DualPolygonSVG';
-import type { ChordQuality, TimeSignature } from '../types';
+import type { ChordQuality, ChordStep, TimeSignature } from '../types';
 
 // ─── HarmonyEngine Tests ──────────────────────────────────────────
 
@@ -45,14 +46,14 @@ describe('HarmonyEngineCore', () => {
     test('resolveChord returns correct for D minor 7', () => {
         const chord = engine.resolveChord('D', 'minor', 1, 'min7', 3);
         expect(chord.rootNote).toBe(2); // D
-        expect(chord.chordTones).toEqual([38, 41, 45, 48]); // D3, F3, A3, C4
+        expect(chord.chordTones).toEqual([50, 53, 57, 60]); // D3, F3, A3, C4
         expect(chord.noteNames).toEqual(['D3', 'F3', 'A3', 'C4']);
     });
 
     test('resolveChord returns correct for G dominant 7', () => {
         const chord = engine.resolveChord('C', 'major', 5, 'dom7', 3);
         expect(chord.rootNote).toBe(7); // G
-        expect(chord.chordTones).toEqual([43, 47, 50, 53]); // G3, B3, D4, F4
+        expect(chord.chordTones).toEqual([55, 59, 62, 65]); // G3, B3, D4, F4
     });
 
     test('stepProgression advances correctly', () => {
@@ -161,6 +162,52 @@ describe('HarmonyEngineCore', () => {
             expect(step.duration).toBeGreaterThan(0);
         }
     });
+
+    test('midiToNoteName uses scientific pitch notation (C4 = 60)', () => {
+        expect(engine.midiToNoteName(60)).toBe('C4');
+        expect(engine.midiToNoteName(69)).toBe('A4');
+        expect(engine.midiToNoteName(48)).toBe('C3');
+    });
+
+    test('stepIndexAtBeat finds the active step and wraps on loop', () => {
+        const prog: ChordStep[] = [
+            { degree: 1, quality: 'maj', duration: 2 }, // bars 0–1 → beats 0–7
+            { degree: 4, quality: 'maj', duration: 2 }, // bars 2–3 → beats 8–15
+        ];
+        expect(engine.stepIndexAtBeat(prog, 0, 4)).toEqual({ index: 0, beatsIntoStep: 0, beatsUntilNext: 8 });
+        expect(engine.stepIndexAtBeat(prog, 7, 4)).toEqual({ index: 0, beatsIntoStep: 7, beatsUntilNext: 1 });
+        expect(engine.stepIndexAtBeat(prog, 8, 4)).toEqual({ index: 1, beatsIntoStep: 0, beatsUntilNext: 8 });
+        // total is 16 beats — beat 20 wraps to beat 4 → still step 0
+        expect(engine.stepIndexAtBeat(prog, 20, 4)).toEqual({ index: 0, beatsIntoStep: 4, beatsUntilNext: 4 });
+    });
+
+    test('voiceLead passes chord through unchanged when there is no previous chord', () => {
+        expect(engine.voiceLead([60, 64, 67], null)).toEqual([60, 64, 67]);
+        expect(engine.voiceLead([60, 64, 67], [])).toEqual([60, 64, 67]);
+    });
+
+    test('voiceLead shifts each voice to the octave nearest the previous chord', () => {
+        // F3-A3-C4 (53,57,60) led against C4-E4-G4 (60,64,67) rises an octave to sit close
+        expect(engine.voiceLead([53, 57, 60], [60, 64, 67])).toEqual([65, 69, 72]);
+        // A low root already near the target is pulled up rather than jumped down
+        expect(engine.voiceLead([48, 52, 55], [60, 64, 67])).toEqual([60, 64, 67]);
+    });
+});
+
+// ─── Arrangement timing helpers ───────────────────────────────────
+
+describe('arrangement timing helpers', () => {
+    test('beatsPerBar is denominator-aware', () => {
+        expect(beatsPerBar({ numerator: 4, denominator: 4 })).toBe(4);
+        expect(beatsPerBar({ numerator: 6, denominator: 8 })).toBe(3);
+        expect(beatsPerBar({ numerator: 3, denominator: 4 })).toBe(3);
+    });
+
+    test('barDurationMs scales with BPM and time signature', () => {
+        expect(barDurationMs(120, { numerator: 4, denominator: 4 })).toBe(2000);
+        expect(barDurationMs(60, { numerator: 4, denominator: 4 })).toBe(4000);
+        expect(barDurationMs(120, { numerator: 6, denominator: 8 })).toBe(1500);
+    });
 });
 
 // ─── VoicingEngine Tests ──────────────────────────────────────────
@@ -232,6 +279,8 @@ describe('TransportClockImpl', () => {
     const mockAudioContext = {
         currentTime: 0,
         sampleRate: 44100,
+        state: 'running',
+        resume: async () => { },
         audioWorklet: { addModule: async () => { } },
     } as unknown as AudioContext;
 
@@ -276,6 +325,67 @@ describe('TransportClockImpl', () => {
         expect(clock.beatsPerBar).toBe(3); // 6/8 = 6 * 0.5 = 3
         clock.setTimeSignature({ numerator: 3, denominator: 4 });
         expect(clock.beatsPerBar).toBe(3); // 3/4
+    });
+
+    test('advance() accumulates beats at the current BPM', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120); // 2 beats/sec
+        clock.start();
+        clock.advance(1000); // 1 second
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+    });
+
+    test('changing BPM mid-playback does not rescale beats already played', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120); // 2 beats/sec
+        clock.start();
+        clock.advance(1000); // +2 beats @ 120bpm = 2
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        clock.setBpm(60); // 1 beat/sec — must not retroactively rescale the 2 beats already played
+        clock.advance(1000); // +1 beat @ 60bpm
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(3, 5);
+    });
+
+    test('pause() preserves position and resume() continues from it', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120);
+        clock.start();
+        clock.advance(1000); // 2 beats
+        clock.pause();
+        expect(clock.isPlaying).toBe(false);
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        // Paused: advance() must be a no-op (nothing is "playing")
+        clock.advance(5000);
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(2, 5);
+
+        clock.resume();
+        expect(clock.isPlaying).toBe(true);
+        clock.advance(500); // +1 beat @ 120bpm
+        expect(clock.getPosition().absoluteBeat).toBeCloseTo(3, 5);
+    });
+
+    test('stop() resets position back to zero', () => {
+        const clock = new TransportClockImpl({
+            source: 'internal', audioContext: mockAudioContext,
+            scheduleAhead: 0.1, schedulerInterval: 0.025,
+        });
+        clock.setBpm(120);
+        clock.start();
+        clock.advance(2000); // 4 beats
+        clock.stop();
+        expect(clock.isPlaying).toBe(false);
+        expect(clock.getPosition().absoluteBeat).toBe(0);
     });
 });
 

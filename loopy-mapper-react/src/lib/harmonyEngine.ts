@@ -70,7 +70,9 @@ export class HarmonyEngineCore {
     resolveChord(key: string, scale: string, degree: number, quality: ChordQuality, octave: number = 3): ResolvedChord {
         const rootNote = this.degreeToRootNote(key, scale, degree);
         const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS.maj;
-        const chordTones = intervals.map(interval => rootNote + interval + octave * 12);
+        // Scientific pitch notation (C4 = MIDI 60), matching SynthEngine.midiToNote
+        // and Tone.js's own note naming — "octave 3" means (octave+1)*12.
+        const chordTones = intervals.map(interval => rootNote + interval + (octave + 1) * 12);
         const noteNames = intervals.map(interval => {
             const noteIndex = (rootNote + interval) % 12;
             return `${NOTE_NAMES[noteIndex]}${octave + Math.floor((rootNote + interval) / 12)}`;
@@ -232,6 +234,71 @@ export class HarmonyEngineCore {
             quality: qualities[degree - 1] || "maj",
             duration: i === steps - 1 ? bars - (steps - 1) * 2 : 2,
         }));
+    }
+
+    /**
+     * Convert a MIDI note number to a note name in scientific pitch notation
+     * (C4 = MIDI 60), matching resolveChord's tone convention.
+     */
+    midiToNoteName(midi: number): string {
+        const octave = Math.floor(midi / 12) - 1;
+        const noteClass = ((midi % 12) + 12) % 12;
+        return `${NOTE_NAMES[noteClass]}${octave}`;
+    }
+
+    /**
+     * Which progression step is active at a given beat offset within a section.
+     * Step durations are in bars; the progression loops, so beats past the total
+     * wrap around. Returns the active index plus how far into / until the step end
+     * we are (useful for UI countdowns and re-resolution timing).
+     */
+    stepIndexAtBeat(
+        progression: ChordStep[],
+        beatInSection: number,
+        beatsPerBar: number,
+    ): { index: number; beatsIntoStep: number; beatsUntilNext: number } {
+        if (progression.length === 0) {
+            return { index: 0, beatsIntoStep: 0, beatsUntilNext: 0 };
+        }
+        const durations = progression.map(s => Math.max(s.duration, 0) * beatsPerBar);
+        const total = durations.reduce((a, b) => a + b, 0);
+        if (total <= 0) return { index: 0, beatsIntoStep: 0, beatsUntilNext: 0 };
+
+        let pos = ((beatInSection % total) + total) % total;
+        for (let i = 0; i < progression.length; i++) {
+            if (pos < durations[i]) {
+                return { index: i, beatsIntoStep: pos, beatsUntilNext: durations[i] - pos };
+            }
+            pos -= durations[i];
+        }
+        // Floating-point fallback: land on the last step's end.
+        const last = progression.length - 1;
+        return { index: last, beatsIntoStep: durations[last], beatsUntilNext: 0 };
+    }
+
+    /**
+     * Minimal voice-leading: shift each new chord tone by whole octaves to sit as
+     * close as possible to the corresponding voice of the previous chord. Avoids the
+     * root-position octave jumps that sound jarring on every change in a looping
+     * context. Voices are matched by index; if the previous chord had fewer voices,
+     * extra new voices lead against its last voice.
+     */
+    voiceLead(current: number[], previous: number[] | null): number[] {
+        if (!previous || previous.length === 0) return [...current];
+        return current.map((note, i) => {
+            const target = previous[Math.min(i, previous.length - 1)];
+            let best = note;
+            let bestDist = Math.abs(note - target);
+            for (const shift of [-24, -12, 12, 24]) {
+                const cand = note + shift;
+                const dist = Math.abs(cand - target);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = cand;
+                }
+            }
+            return best;
+        });
     }
 }
 

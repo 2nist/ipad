@@ -12,6 +12,7 @@
     ],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
+    "strict": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -19,8 +20,7 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    /* Path aliases */
-    "baseUrl": ".",
+    /* Path aliases — paths resolve relative to this file without baseUrl (TS 4.1+) */
     "paths": {
       "@/*": [
         "./src/*"
@@ -34,5 +34,8 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/__tests__"
   ]
 }

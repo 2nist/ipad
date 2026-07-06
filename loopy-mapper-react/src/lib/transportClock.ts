@@ -27,13 +27,18 @@ export class TransportClockImpl implements TransportClock {
 
     private audioContext: AudioContext;
     private subscribers: SubscriberEntry[] = [];
-    private scheduledCallbacks: Map<number, Array<() => void>> = new Map();
     private currentSectionBars: number = 8;
     private currentSectionId: string = "";
     private rafId: number | null = null;
     private lastBeatFloor: number = -1;
     private lastBarFloor: number = -1;
-    private startWallTime: number = 0;
+    private lastFrameTime: number | null = null;
+
+    // Source of truth for position. Beats accumulate incrementally each frame
+    // (see advance()) instead of being derived from `elapsedWallTime / secondsPerBeat`,
+    // so changing BPM mid-playback only changes the rate of *future* accumulation —
+    // it can never rescale time already played and teleport the playhead.
+    private accumulatedBeats: number = 0;
 
     constructor(config: InternalClockConfig) {
         this.audioContext = config.audioContext;
@@ -49,7 +54,9 @@ export class TransportClockImpl implements TransportClock {
 
     setBpm(bpm: number): void {
         this.bpm = Math.min(200, Math.max(60, bpm));
-        Tone.Transport.bpm.value = this.bpm;
+        // Tone.Transport sync happens via the onBpmChange subscriber (see
+        // useEngineInitialization) — keeping this class free of a direct Tone
+        // dependency is what makes it usable outside a browser/Tone context.
         for (const entry of this.subscribers) {
             entry.subscriber.onBpmChange?.(this.bpm);
         }
@@ -80,11 +87,12 @@ export class TransportClockImpl implements TransportClock {
         }
 
         this.isPlaying = true;
-        this.startWallTime = performance.now();
+        this.accumulatedBeats = 0;
+        this.lastFrameTime = performance.now();
         this.lastBeatFloor = -1;
         this.lastBarFloor = -1;
 
-        console.log('[Clock] Starting at BPM:', this.bpm, 'Wall time:', this.startWallTime);
+        console.log('[Clock] Starting at BPM:', this.bpm);
 
         // Notify onStart
         const pos = this.getPosition();
@@ -95,10 +103,15 @@ export class TransportClockImpl implements TransportClock {
         this.startScheduler();
     }
 
+    /** Full stop — rewinds position to the top (beat 0). For a resumable pause, use pause(). */
     stop(): void {
         if (!this.isPlaying) return;
         this.isPlaying = false;
         this.stopScheduler();
+        this.accumulatedBeats = 0;
+        this.lastFrameTime = null;
+        this.lastBeatFloor = -1;
+        this.lastBarFloor = -1;
 
         const pos = this.getPosition();
         for (const entry of this.subscribers) {
@@ -108,6 +121,27 @@ export class TransportClockImpl implements TransportClock {
         console.log('[Clock] Stopped at beat:', pos.absoluteBeat.toFixed(2));
     }
 
+    /** Stop the scheduler but keep the current position — resume() continues from here. */
+    pause(): void {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        this.stopScheduler();
+        this.lastFrameTime = null;
+        console.log('[Clock] Paused at beat:', this.accumulatedBeats.toFixed(2));
+    }
+
+    /** Resume playback from the position left by pause(), without re-firing onStart. */
+    resume(): void {
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        this.lastFrameTime = performance.now();
+        // Don't re-fire onBeat/onBar for the beat/bar we already announced before pausing.
+        this.lastBeatFloor = Math.floor(this.accumulatedBeats);
+        this.lastBarFloor = Math.floor(this.accumulatedBeats / this.beatsPerBar);
+        this.startScheduler();
+        console.log('[Clock] Resumed at beat:', this.accumulatedBeats.toFixed(2));
+    }
+
     toggle(): void {
         if (this.isPlaying) this.stop();
         else this.start();
@@ -115,16 +149,19 @@ export class TransportClockImpl implements TransportClock {
 
     tapTempo(): void { /* handled in store */ }
 
+    /**
+     * Advance the clock by a fixed wall-clock delta. This is the single mechanism
+     * that moves `accumulatedBeats` forward — the rAF loop calls it every frame with
+     * a measured delta, and it can also be called directly (e.g. in tests) to
+     * deterministically simulate time passing without a real rAF/timer.
+     */
     advance(deltaTimeMs: number): void {
         if (!this.isPlaying) return;
-        const deltaBeats = deltaTimeMs / 1000 / this.secondsPerBeat;
+        this.accumulatedBeats += (deltaTimeMs / 1000) / this.secondsPerBeat;
     }
 
     getPosition(): ClockPosition {
-        const elapsedSec = this.isPlaying
-            ? (performance.now() - this.startWallTime) / 1000
-            : 0;
-        const absoluteBeat = elapsedSec / this.secondsPerBeat;
+        const absoluteBeat = this.accumulatedBeats;
 
         const totalBeatsInSection = this.beatsPerBar * this.currentSectionBars;
         const sectionBeat = absoluteBeat % Math.max(totalBeatsInSection, 1);
@@ -145,31 +182,28 @@ export class TransportClockImpl implements TransportClock {
         };
     }
 
+    /** Schedule `callback` at an absolute beat number, timed at the current BPM. */
     scheduleAt(beat: number, callback: () => void): void {
-        const beatTime = beat * this.secondsPerBeat;
-        const now = (performance.now() - this.startWallTime) / 1000;
-        const delayMs = (beatTime - now) * 1000;
+        const beatsUntil = beat - this.accumulatedBeats;
+        const delayMs = beatsUntil * this.secondsPerBeat * 1000;
         if (delayMs > 0) {
-            setTimeout(callback, Math.max(0, delayMs));
+            setTimeout(callback, delayMs);
         } else {
             callback();
         }
     }
 
     scheduleBeat(offset: number, callback: () => void): void {
-        const currentBeat = (performance.now() - this.startWallTime) / 1000 / this.secondsPerBeat;
-        this.scheduleAt(Math.floor(currentBeat) + offset, callback);
+        this.scheduleAt(Math.floor(this.accumulatedBeats) + offset, callback);
     }
 
     scheduleBar(offset: number, callback: () => void): void {
-        const currentBeat = (performance.now() - this.startWallTime) / 1000 / this.secondsPerBeat;
-        const currentBarBeat = Math.floor(currentBeat / this.beatsPerBar) * this.beatsPerBar;
+        const currentBarBeat = Math.floor(this.accumulatedBeats / this.beatsPerBar) * this.beatsPerBar;
         this.scheduleAt(currentBarBeat + (offset * this.beatsPerBar), callback);
     }
 
     scheduleTick(offset: number, callback: () => void): void {
-        const currentBeat = (performance.now() - this.startWallTime) / 1000 / this.secondsPerBeat;
-        this.scheduleAt(currentBeat + (offset / this.tickResolution), callback);
+        this.scheduleAt(this.accumulatedBeats + (offset / this.tickResolution), callback);
     }
 
     registerSubscriber(subscriber: ClockSubscriber): void {
@@ -188,12 +222,24 @@ export class TransportClockImpl implements TransportClock {
     }
 
     private startScheduler(): void {
+        // No rAF in Node/test environments — advance() can still be called directly
+        // (e.g. from tests) to deterministically simulate frames without a real loop.
+        if (typeof requestAnimationFrame === 'undefined') return;
+
         const loop = () => {
             if (!this.isPlaying) return;
             this.rafId = requestAnimationFrame(loop);
 
+            const now = performance.now();
+            const deltaMs = now - (this.lastFrameTime ?? now);
+            this.lastFrameTime = now;
+            this.advance(deltaMs);
+
             const pos = this.getPosition();
             const ab = pos.absoluteBeat;
+            this.currentBeat = pos.beatInBar;
+            this.currentBar = pos.barInSection;
+            this.currentTick = pos.tickInBeat;
 
             // Fire tick (~60fps)
             for (const entry of this.subscribers) {

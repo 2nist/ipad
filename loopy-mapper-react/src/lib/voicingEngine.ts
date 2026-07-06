@@ -82,7 +82,8 @@ export class VoicingEngine {
 
     private getBasicTones(chord: ResolvedChord, config: VoicingConfig): number[] {
         const intervals = CHORD_INTERVALS[chord.quality] || CHORD_INTERVALS.maj;
-        const rootNote = chord.rootNote + chord.rootOctave * 12;
+        // Matches HarmonyEngineCore.resolveChord's scientific-pitch-notation convention.
+        const rootNote = chord.rootNote + (chord.rootOctave + 1) * 12;
 
         // Get unique tones in the chord, limited to voiceCount
         const toneCount = Math.min(config.voiceCount, intervals.length);

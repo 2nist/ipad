@@ -326,6 +326,10 @@ export interface TransportClock {
     scheduleAt(beat: number, callback: () => void): void;
     start(): void;
     stop(): void;
+    /** Stop the scheduler but preserve position — pairs with resume(). */
+    pause(): void;
+    /** Resume playback from the position left by pause(). */
+    resume(): void;
     toggle(): void;
     setBpm(bpm: number): void;
     tapTempo(): void;
@@ -335,6 +339,8 @@ export interface TransportClock {
     scheduleTick(offset: number, callback: () => void): void;
     registerSubscriber(subscriber: ClockSubscriber): void;
     unregisterSubscriber(id: string): void;
+    /** Sync the clock's section-relative bookkeeping (bar count / id) to the active section. */
+    setSectionContext(bars: number, sectionId: string): void;
 }
 
 export type ClockSource = "internal" | "midiClock";
@@ -601,6 +607,12 @@ export interface HarmonyRuntimeState {
     beatsInStep: number;
     beatsUntilNext: number;
     cadenceType: string;
+    /**
+     * Runtime-only (never persisted/exported). When a HarmonicExpression override
+     * is active, `progression` holds the override and this is the section-beat at
+     * which it reverts to the section's base progression. Absent = no override.
+     */
+    overrideUntilBeat?: number;
 }
 
 export interface ExpressionRuntimeState {
@@ -671,7 +683,7 @@ export interface LooperStore {
     };
     engines: {
         audioContext: AudioContext | null;
-        looperEngine: unknown | null;
+        looperEngine: import('../lib/audio-worklet').LooperEngine | null;
         clockEngine: TransportClock | null;
         midiRouter: import('../lib/midiRouter').MidiRouter | null;
         initialized: boolean;
@@ -725,6 +737,8 @@ export interface LooperStoreActions {
     addSectionMarker(sectionId: string, marker: SectionMarker): void;
     removeSectionMarker(sectionId: string, markerIndex: number): void;
     setSongMetadata(updates: Partial<SongMetadata>): void;
+    addMidiBinding(binding: MidiBinding): void;
+    setMidiBindings(bindings: MidiBinding[]): void;
 
     // Track actions
     updateTrack(moduleId: string, trackIndex: number, updates: Partial<ModuleTrackConfig>): void;

@@ -114,7 +114,7 @@ export interface LooperTrack {
 
 export type LooperEventCallback = (tracks: LooperTrack[]) => void;
 
-class LooperEngine {
+export class LooperEngine {
     private audioContext: AudioContext | null = null;
     private nodes: Map<number, AudioWorkletNode> = new Map();
     private gainNodes: Map<number, GainNode> = new Map();

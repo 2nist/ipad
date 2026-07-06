@@ -62,35 +62,40 @@ export const DEFAULT_CANVAS_VIEW: CanvasViewState = {
     playheadPosition: 0,
 };
 
+// Single source of truth for the ui slice's shape — reused wherever the ui
+// state needs to be reset (e.g. songSlice.newSong) so new fields can't drift
+// out of sync between the initial state and reset call sites.
+export const DEFAULT_UI: UiSlice['ui'] = {
+    activeModal: { type: "none" },
+    activeEditorPanel: { type: "none" },
+    editingModuleId: null,
+    editingTrackIndex: null,
+    clipBrowserOpen: false,
+    sidebarVisible: true,
+    rightPanelVisible: true,
+    lyrics: "",
+    lyricsSectionId: null,
+    canvasView: { ...DEFAULT_CANVAS_VIEW },
+    midiLearnTarget: null,
+    midiActivity: false,
+    midiDeviceConnected: false,
+    audioInitialized: false,
+    canvasLockSize: false,
+    canvasLockPosition: false,
+    assigningModuleId: null,
+    midiEditorOpen: false,
+    midiEditorModuleId: null,
+    midiEditorTrackIndex: null,
+    drumBrowserOpen: false,
+};
+
 export const createUiSlice: StateCreator<
     LooperStore,
     [],
     [],
     UiSlice
 > = (set, get) => ({
-    ui: {
-        activeModal: { type: "none" },
-        activeEditorPanel: { type: "none" },
-        editingModuleId: null,
-        editingTrackIndex: null,
-        clipBrowserOpen: false,
-        sidebarVisible: true,
-        rightPanelVisible: true,
-        lyrics: "",
-        lyricsSectionId: null,
-        canvasView: { ...DEFAULT_CANVAS_VIEW },
-        midiLearnTarget: null,
-        midiActivity: false,
-        midiDeviceConnected: false,
-        audioInitialized: false,
-        canvasLockSize: false,
-        canvasLockPosition: false,
-        assigningModuleId: null,
-        midiEditorOpen: false,
-        midiEditorModuleId: null,
-        midiEditorTrackIndex: null,
-        drumBrowserOpen: false,
-    },
+    ui: { ...DEFAULT_UI },
 
     setModal: (modal: ModalDialog) => {
         set(state => ({
@@ -111,6 +116,8 @@ export const createUiSlice: StateCreator<
                 activeEditorPanel: panel,
                 editingModuleId: moduleId ?? null,
                 editingTrackIndex: trackIndex ?? null,
+                // Opening any real panel implies showing the panel that hosts it.
+                rightPanelVisible: panel.type === 'none' ? state.ui.rightPanelVisible : true,
             },
         }));
     },
