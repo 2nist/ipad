@@ -1,0 +1,2162 @@
+{
+ "kits": [
+  {
+   "name": "Akai Mpc60",
+   "sampleCount": 18,
+   "samples": [
+    {
+     "filename": "MaxV - Conga.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Conga.wav"
+    },
+    {
+     "filename": "MaxV - Crash.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Crash.wav"
+    },
+    {
+     "filename": "MaxV - HiHat Closed.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20HiHat%20Closed.wav"
+    },
+    {
+     "filename": "MaxV - HiHat Open.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20HiHat%20Open.wav"
+    },
+    {
+     "filename": "MaxV - Kick.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Kick.wav"
+    },
+    {
+     "filename": "MaxV - Ride.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Ride.wav"
+    },
+    {
+     "filename": "MaxV - Rimshot 1.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Rimshot%201.wav"
+    },
+    {
+     "filename": "MaxV - Rimshot 2.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Rimshot%202.wav"
+    },
+    {
+     "filename": "MaxV - Rimshot 3.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Rimshot%203.wav"
+    },
+    {
+     "filename": "MaxV - Rimshot 4.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Rimshot%204.wav"
+    },
+    {
+     "filename": "MaxV - Rimshot 5.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Rimshot%205.wav"
+    },
+    {
+     "filename": "MaxV - Snare 1.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Snare%201.wav"
+    },
+    {
+     "filename": "MaxV - Snare 2.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Snare%202.wav"
+    },
+    {
+     "filename": "MaxV - Snare.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Snare.wav"
+    },
+    {
+     "filename": "MaxV - Tom High.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Tom%20High.wav"
+    },
+    {
+     "filename": "MaxV - Tom Low 1.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Tom%20Low%201.wav"
+    },
+    {
+     "filename": "MaxV - Tom Low 2.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Tom%20Low%202.wav"
+    },
+    {
+     "filename": "MaxV - Tom Mid.wav",
+     "url": "/drums/Akai%20Mpc60/MaxV%20-%20Tom%20Mid.wav"
+    }
+   ]
+  },
+  {
+   "name": "Emu Drumulator",
+   "sampleCount": 63,
+   "samples": [
+    {
+     "filename": "DrumulatorAgogoHi.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorAgogoHi.wav"
+    },
+    {
+     "filename": "DrumulatorAgogoLo.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorAgogoLo.wav"
+    },
+    {
+     "filename": "DrumulatorBlock.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorBlock.wav"
+    },
+    {
+     "filename": "DrumulatorCabasa.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorCabasa.wav"
+    },
+    {
+     "filename": "DrumulatorClap.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorClap.wav"
+    },
+    {
+     "filename": "DrumulatorClave.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorClave.wav"
+    },
+    {
+     "filename": "DrumulatorConga01.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorConga01.wav"
+    },
+    {
+     "filename": "DrumulatorConga02.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorConga02.wav"
+    },
+    {
+     "filename": "DrumulatorCrash.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorCrash.wav"
+    },
+    {
+     "filename": "DrumulatorETomHi.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorETomHi.wav"
+    },
+    {
+     "filename": "DrumulatorETomLo.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorETomLo.wav"
+    },
+    {
+     "filename": "DrumulatorETomMid.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorETomMid.wav"
+    },
+    {
+     "filename": "DrumulatorHat_C.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorHat_C.wav"
+    },
+    {
+     "filename": "DrumulatorHat_O.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorHat_O.wav"
+    },
+    {
+     "filename": "DrumulatorHat_P.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorHat_P.wav"
+    },
+    {
+     "filename": "DrumulatorKick01.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorKick01.wav"
+    },
+    {
+     "filename": "DrumulatorKick02.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorKick02.wav"
+    },
+    {
+     "filename": "DrumulatorRide.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorRide.wav"
+    },
+    {
+     "filename": "DrumulatorSnare01.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorSnare01.wav"
+    },
+    {
+     "filename": "DrumulatorSnare02.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorSnare02.wav"
+    },
+    {
+     "filename": "DrumulatorSnare03.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorSnare03.wav"
+    },
+    {
+     "filename": "DrumulatorSnare04.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorSnare04.wav"
+    },
+    {
+     "filename": "DrumulatorTamborine.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorTamborine.wav"
+    },
+    {
+     "filename": "DrumulatorTimbHi.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorTimbHi.wav"
+    },
+    {
+     "filename": "DrumulatorTimbLo.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorTimbLo.wav"
+    },
+    {
+     "filename": "DrumulatorTom02.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorTom02.wav"
+    },
+    {
+     "filename": "DrumulatorTom03.wav",
+     "url": "/drums/Emu%20Drumulator/DrumulatorTom03.wav"
+    },
+    {
+     "filename": "MaxV - CLD01.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20CLD01.wav"
+    },
+    {
+     "filename": "MaxV - CLD02.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20CLD02.wav"
+    },
+    {
+     "filename": "MaxV - DRM03.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM03.wav"
+    },
+    {
+     "filename": "MaxV - DRM04.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM04.wav"
+    },
+    {
+     "filename": "MaxV - DRM05.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM05.wav"
+    },
+    {
+     "filename": "MaxV - DRM06.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM06.wav"
+    },
+    {
+     "filename": "MaxV - DRM07.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM07.wav"
+    },
+    {
+     "filename": "MaxV - DRM08.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20DRM08.wav"
+    },
+    {
+     "filename": "MaxV - EMU09.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU09.wav"
+    },
+    {
+     "filename": "MaxV - EMU10.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU10.wav"
+    },
+    {
+     "filename": "MaxV - EMU11.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU11.wav"
+    },
+    {
+     "filename": "MaxV - EMU12.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU12.wav"
+    },
+    {
+     "filename": "MaxV - EMU13.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU13.wav"
+    },
+    {
+     "filename": "MaxV - EMU14.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU14.wav"
+    },
+    {
+     "filename": "MaxV - EMU15.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU15.wav"
+    },
+    {
+     "filename": "MaxV - EMU16.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU16.wav"
+    },
+    {
+     "filename": "MaxV - EMU17.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU17.wav"
+    },
+    {
+     "filename": "MaxV - EMU18.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU18.wav"
+    },
+    {
+     "filename": "MaxV - EMU19.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU19.wav"
+    },
+    {
+     "filename": "MaxV - EMU20.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU20.wav"
+    },
+    {
+     "filename": "MaxV - EMU_BD.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_BD.wav"
+    },
+    {
+     "filename": "MaxV - EMU_C-HH.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_C-HH.wav"
+    },
+    {
+     "filename": "MaxV - EMU_CLAP.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_CLAP.wav"
+    },
+    {
+     "filename": "MaxV - EMU_CLVE.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_CLVE.wav"
+    },
+    {
+     "filename": "MaxV - EMU_COWB.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_COWB.wav"
+    },
+    {
+     "filename": "MaxV - EMU_CYMB.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_CYMB.wav"
+    },
+    {
+     "filename": "MaxV - EMU_HTOM.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_HTOM.wav"
+    },
+    {
+     "filename": "MaxV - EMU_LTOM.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_LTOM.wav"
+    },
+    {
+     "filename": "MaxV - EMU_MTOM.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_MTOM.wav"
+    },
+    {
+     "filename": "MaxV - EMU_O-HH.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_O-HH.wav"
+    },
+    {
+     "filename": "MaxV - EMU_RIM.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_RIM.wav"
+    },
+    {
+     "filename": "MaxV - EMU_SD.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20EMU_SD.wav"
+    },
+    {
+     "filename": "MaxV - KDR21.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20KDR21.wav"
+    },
+    {
+     "filename": "MaxV - OHD22.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20OHD22.wav"
+    },
+    {
+     "filename": "MaxV - SND23.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20SND23.wav"
+    },
+    {
+     "filename": "MaxV - SND24.wav",
+     "url": "/drums/Emu%20Drumulator/MaxV%20-%20SND24.wav"
+    }
+   ]
+  },
+  {
+   "name": "Emu Sp12",
+   "sampleCount": 32,
+   "samples": [
+    {
+     "filename": "BIG tom.wav",
+     "url": "/drums/Emu%20Sp12/BIG%20tom.wav"
+    },
+    {
+     "filename": "Kick.wav",
+     "url": "/drums/Emu%20Sp12/Kick.wav"
+    },
+    {
+     "filename": "bd1.wav",
+     "url": "/drums/Emu%20Sp12/bd1.wav"
+    },
+    {
+     "filename": "bd2.wav",
+     "url": "/drums/Emu%20Sp12/bd2.wav"
+    },
+    {
+     "filename": "big esnare.wav",
+     "url": "/drums/Emu%20Sp12/big%20esnare.wav"
+    },
+    {
+     "filename": "clank.wav",
+     "url": "/drums/Emu%20Sp12/clank.wav"
+    },
+    {
+     "filename": "doink.wav",
+     "url": "/drums/Emu%20Sp12/doink.wav"
+    },
+    {
+     "filename": "doomtom.wav",
+     "url": "/drums/Emu%20Sp12/doomtom.wav"
+    },
+    {
+     "filename": "electro.wav",
+     "url": "/drums/Emu%20Sp12/electro.wav"
+    },
+    {
+     "filename": "electro2.wav",
+     "url": "/drums/Emu%20Sp12/electro2.wav"
+    },
+    {
+     "filename": "esnare.wav",
+     "url": "/drums/Emu%20Sp12/esnare.wav"
+    },
+    {
+     "filename": "esnare2.wav",
+     "url": "/drums/Emu%20Sp12/esnare2.wav"
+    },
+    {
+     "filename": "guitchun.wav",
+     "url": "/drums/Emu%20Sp12/guitchun.wav"
+    },
+    {
+     "filename": "guitkchung.wav",
+     "url": "/drums/Emu%20Sp12/guitkchung.wav"
+    },
+    {
+     "filename": "hihat semi.wav",
+     "url": "/drums/Emu%20Sp12/hihat%20semi.wav"
+    },
+    {
+     "filename": "hihat.wav",
+     "url": "/drums/Emu%20Sp12/hihat.wav"
+    },
+    {
+     "filename": "kkhhaaa.wav",
+     "url": "/drums/Emu%20Sp12/kkhhaaa.wav"
+    },
+    {
+     "filename": "lo tom.wav",
+     "url": "/drums/Emu%20Sp12/lo%20tom.wav"
+    },
+    {
+     "filename": "lo tom2.wav",
+     "url": "/drums/Emu%20Sp12/lo%20tom2.wav"
+    },
+    {
+     "filename": "open hi.wav",
+     "url": "/drums/Emu%20Sp12/open%20hi.wav"
+    },
+    {
+     "filename": "rim.wav",
+     "url": "/drums/Emu%20Sp12/rim.wav"
+    },
+    {
+     "filename": "snare 2.wav",
+     "url": "/drums/Emu%20Sp12/snare%202.wav"
+    },
+    {
+     "filename": "snare 3.wav",
+     "url": "/drums/Emu%20Sp12/snare%203.wav"
+    },
+    {
+     "filename": "snare.wav",
+     "url": "/drums/Emu%20Sp12/snare.wav"
+    },
+    {
+     "filename": "snare3.wav",
+     "url": "/drums/Emu%20Sp12/snare3.wav"
+    },
+    {
+     "filename": "synbass.wav",
+     "url": "/drums/Emu%20Sp12/synbass.wav"
+    },
+    {
+     "filename": "syncord.wav",
+     "url": "/drums/Emu%20Sp12/syncord.wav"
+    },
+    {
+     "filename": "syncord2.wav",
+     "url": "/drums/Emu%20Sp12/syncord2.wav"
+    },
+    {
+     "filename": "thisnare.wav",
+     "url": "/drums/Emu%20Sp12/thisnare.wav"
+    },
+    {
+     "filename": "tom.wav",
+     "url": "/drums/Emu%20Sp12/tom.wav"
+    },
+    {
+     "filename": "tom2.wav",
+     "url": "/drums/Emu%20Sp12/tom2.wav"
+    },
+    {
+     "filename": "zap.wav",
+     "url": "/drums/Emu%20Sp12/zap.wav"
+    }
+   ]
+  },
+  {
+   "name": "Jomox Xbase-09",
+   "sampleCount": 36,
+   "samples": [
+    {
+     "filename": "BassDr01.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr01.wav"
+    },
+    {
+     "filename": "BassDr02.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr02.wav"
+    },
+    {
+     "filename": "BassDr03.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr03.wav"
+    },
+    {
+     "filename": "BassDr04.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr04.wav"
+    },
+    {
+     "filename": "BassDr05.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr05.wav"
+    },
+    {
+     "filename": "BassDr06.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr06.wav"
+    },
+    {
+     "filename": "BassDr07.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr07.wav"
+    },
+    {
+     "filename": "BassDr08.wav",
+     "url": "/drums/Jomox%20Xbase-09/BassDr08.wav"
+    },
+    {
+     "filename": "Breath01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Breath01.wav"
+    },
+    {
+     "filename": "Breath02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Breath02.wav"
+    },
+    {
+     "filename": "Breath03.wav",
+     "url": "/drums/Jomox%20Xbase-09/Breath03.wav"
+    },
+    {
+     "filename": "Breath04.wav",
+     "url": "/drums/Jomox%20Xbase-09/Breath04.wav"
+    },
+    {
+     "filename": "Clap01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Clap01.wav"
+    },
+    {
+     "filename": "Clhh01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Clhh01.wav"
+    },
+    {
+     "filename": "Clhh02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Clhh02.wav"
+    },
+    {
+     "filename": "Clhh03.wav",
+     "url": "/drums/Jomox%20Xbase-09/Clhh03.wav"
+    },
+    {
+     "filename": "Crash01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Crash01.wav"
+    },
+    {
+     "filename": "Crash02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Crash02.wav"
+    },
+    {
+     "filename": "Crash03.wav",
+     "url": "/drums/Jomox%20Xbase-09/Crash03.wav"
+    },
+    {
+     "filename": "LFOClap.wav",
+     "url": "/drums/Jomox%20Xbase-09/LFOClap.wav"
+    },
+    {
+     "filename": "LFOOphh.wav",
+     "url": "/drums/Jomox%20Xbase-09/LFOOphh.wav"
+    },
+    {
+     "filename": "LongBD01.wav",
+     "url": "/drums/Jomox%20Xbase-09/LongBD01.wav"
+    },
+    {
+     "filename": "LongBD02.wav",
+     "url": "/drums/Jomox%20Xbase-09/LongBD02.wav"
+    },
+    {
+     "filename": "LongBD03.wav",
+     "url": "/drums/Jomox%20Xbase-09/LongBD03.wav"
+    },
+    {
+     "filename": "Ophh01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Ophh01.wav"
+    },
+    {
+     "filename": "Ophh02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Ophh02.wav"
+    },
+    {
+     "filename": "Ophh03.wav",
+     "url": "/drums/Jomox%20Xbase-09/Ophh03.wav"
+    },
+    {
+     "filename": "Ride01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Ride01.wav"
+    },
+    {
+     "filename": "Rim01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Rim01.wav"
+    },
+    {
+     "filename": "Rim02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Rim02.wav"
+    },
+    {
+     "filename": "Snare01.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare01.wav"
+    },
+    {
+     "filename": "Snare02.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare02.wav"
+    },
+    {
+     "filename": "Snare03.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare03.wav"
+    },
+    {
+     "filename": "Snare04.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare04.wav"
+    },
+    {
+     "filename": "Snare05.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare05.wav"
+    },
+    {
+     "filename": "Snare06.wav",
+     "url": "/drums/Jomox%20Xbase-09/Snare06.wav"
+    }
+   ]
+  },
+  {
+   "name": "Linn Drum LM1",
+   "sampleCount": 19,
+   "samples": [
+    {
+     "filename": "bass1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/bass1.wav"
+    },
+    {
+     "filename": "bass6.wav",
+     "url": "/drums/Linn%20Drum%20LM1/bass6.wav"
+    },
+    {
+     "filename": "cbsa1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/cbsa1.wav"
+    },
+    {
+     "filename": "cga2.wav",
+     "url": "/drums/Linn%20Drum%20LM1/cga2.wav"
+    },
+    {
+     "filename": "clap.wav",
+     "url": "/drums/Linn%20Drum%20LM1/clap.wav"
+    },
+    {
+     "filename": "claps.wav",
+     "url": "/drums/Linn%20Drum%20LM1/claps.wav"
+    },
+    {
+     "filename": "cowbel.wav",
+     "url": "/drums/Linn%20Drum%20LM1/cowbel.wav"
+    },
+    {
+     "filename": "crsh1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/crsh1.wav"
+    },
+    {
+     "filename": "hihat1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/hihat1.wav"
+    },
+    {
+     "filename": "ride1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/ride1.wav"
+    },
+    {
+     "filename": "shake.wav",
+     "url": "/drums/Linn%20Drum%20LM1/shake.wav"
+    },
+    {
+     "filename": "snap101.wav",
+     "url": "/drums/Linn%20Drum%20LM1/snap101.wav"
+    },
+    {
+     "filename": "snar23.wav",
+     "url": "/drums/Linn%20Drum%20LM1/snar23.wav"
+    },
+    {
+     "filename": "snare.wav",
+     "url": "/drums/Linn%20Drum%20LM1/snare.wav"
+    },
+    {
+     "filename": "sstk1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/sstk1.wav"
+    },
+    {
+     "filename": "tamb.wav",
+     "url": "/drums/Linn%20Drum%20LM1/tamb.wav"
+    },
+    {
+     "filename": "tom1.wav",
+     "url": "/drums/Linn%20Drum%20LM1/tom1.wav"
+    },
+    {
+     "filename": "tom6.wav",
+     "url": "/drums/Linn%20Drum%20LM1/tom6.wav"
+    },
+    {
+     "filename": "tom7.wav",
+     "url": "/drums/Linn%20Drum%20LM1/tom7.wav"
+    }
+   ]
+  },
+  {
+   "name": "Linn Linndrum",
+   "sampleCount": 24,
+   "samples": [
+    {
+     "filename": "LinnClap.wav",
+     "url": "/drums/Linn%20Linndrum/LinnClap.wav"
+    },
+    {
+     "filename": "LinnCowbell.wav",
+     "url": "/drums/Linn%20Linndrum/LinnCowbell.wav"
+    },
+    {
+     "filename": "LinnCrash.wav",
+     "url": "/drums/Linn%20Linndrum/LinnCrash.wav"
+    },
+    {
+     "filename": "LinnHat_C.wav",
+     "url": "/drums/Linn%20Linndrum/LinnHat_C.wav"
+    },
+    {
+     "filename": "LinnHat_O.wav",
+     "url": "/drums/Linn%20Linndrum/LinnHat_O.wav"
+    },
+    {
+     "filename": "LinnHat_P.wav",
+     "url": "/drums/Linn%20Linndrum/LinnHat_P.wav"
+    },
+    {
+     "filename": "LinnKick01.wav",
+     "url": "/drums/Linn%20Linndrum/LinnKick01.wav"
+    },
+    {
+     "filename": "LinnKick02.wav",
+     "url": "/drums/Linn%20Linndrum/LinnKick02.wav"
+    },
+    {
+     "filename": "LinnRatchet.wav",
+     "url": "/drums/Linn%20Linndrum/LinnRatchet.wav"
+    },
+    {
+     "filename": "LinnRide.wav",
+     "url": "/drums/Linn%20Linndrum/LinnRide.wav"
+    },
+    {
+     "filename": "LinnRimshot.wav",
+     "url": "/drums/Linn%20Linndrum/LinnRimshot.wav"
+    },
+    {
+     "filename": "LinnShaker.wav",
+     "url": "/drums/Linn%20Linndrum/LinnShaker.wav"
+    },
+    {
+     "filename": "LinnSnare01.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare01.wav"
+    },
+    {
+     "filename": "LinnSnare02.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare02.wav"
+    },
+    {
+     "filename": "LinnSnare03.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare03.wav"
+    },
+    {
+     "filename": "LinnSnare04.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare04.wav"
+    },
+    {
+     "filename": "LinnSnare05.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare05.wav"
+    },
+    {
+     "filename": "LinnSnare06.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare06.wav"
+    },
+    {
+     "filename": "LinnSnare07.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare07.wav"
+    },
+    {
+     "filename": "LinnSnare08.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare08.wav"
+    },
+    {
+     "filename": "LinnSnare09.wav",
+     "url": "/drums/Linn%20Linndrum/LinnSnare09.wav"
+    },
+    {
+     "filename": "LinnTamborine.wav",
+     "url": "/drums/Linn%20Linndrum/LinnTamborine.wav"
+    },
+    {
+     "filename": "LinnTom01.wav",
+     "url": "/drums/Linn%20Linndrum/LinnTom01.wav"
+    },
+    {
+     "filename": "LinnTom02.wav",
+     "url": "/drums/Linn%20Linndrum/LinnTom02.wav"
+    }
+   ]
+  },
+  {
+   "name": "Oberheim Dmx",
+   "sampleCount": 30,
+   "samples": [
+    {
+     "filename": "DMXCabasa.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXCabasa.wav"
+    },
+    {
+     "filename": "DMXClap.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXClap.wav"
+    },
+    {
+     "filename": "DMXCrash.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXCrash.wav"
+    },
+    {
+     "filename": "DMXHat_C.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXHat_C.wav"
+    },
+    {
+     "filename": "DMXHat_O.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXHat_O.wav"
+    },
+    {
+     "filename": "DMXKick01.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXKick01.wav"
+    },
+    {
+     "filename": "DMXKick02.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXKick02.wav"
+    },
+    {
+     "filename": "DMXRide.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXRide.wav"
+    },
+    {
+     "filename": "DMXRim.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXRim.wav"
+    },
+    {
+     "filename": "DMXSnare01.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXSnare01.wav"
+    },
+    {
+     "filename": "DMXSnare02.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXSnare02.wav"
+    },
+    {
+     "filename": "DMXSnare03.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXSnare03.wav"
+    },
+    {
+     "filename": "DMXTamborine.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTamborine.wav"
+    },
+    {
+     "filename": "DMXTimbaleHi.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTimbaleHi.wav"
+    },
+    {
+     "filename": "DMXTimbaleLo.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTimbaleLo.wav"
+    },
+    {
+     "filename": "DMXTomHi.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTomHi.wav"
+    },
+    {
+     "filename": "DMXTomLo.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTomLo.wav"
+    },
+    {
+     "filename": "DMXTomMid.wav",
+     "url": "/drums/Oberheim%20Dmx/DMXTomMid.wav"
+    },
+    {
+     "filename": "MaxV - DMX 01.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2001.wav"
+    },
+    {
+     "filename": "MaxV - DMX 02.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2002.wav"
+    },
+    {
+     "filename": "MaxV - DMX 03.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2003.wav"
+    },
+    {
+     "filename": "MaxV - DMX 04.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2004.wav"
+    },
+    {
+     "filename": "MaxV - DMX 05.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2005.wav"
+    },
+    {
+     "filename": "MaxV - DMX 06.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2006.wav"
+    },
+    {
+     "filename": "MaxV - DMX 07.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2007.wav"
+    },
+    {
+     "filename": "MaxV - DMX 08.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2008.wav"
+    },
+    {
+     "filename": "MaxV - DMX 09.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2009.wav"
+    },
+    {
+     "filename": "MaxV - DMX 10.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2010.wav"
+    },
+    {
+     "filename": "MaxV - DMX 11.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2011.wav"
+    },
+    {
+     "filename": "MaxV - DMX 12.wav",
+     "url": "/drums/Oberheim%20Dmx/MaxV%20-%20DMX%2012.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland CR-8000",
+   "sampleCount": 13,
+   "samples": [
+    {
+     "filename": "CR8000Clap.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Clap.wav"
+    },
+    {
+     "filename": "CR8000Clave.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Clave.wav"
+    },
+    {
+     "filename": "CR8000CongaHi.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000CongaHi.wav"
+    },
+    {
+     "filename": "CR8000CongaLo.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000CongaLo.wav"
+    },
+    {
+     "filename": "CR8000Cowbell.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Cowbell.wav"
+    },
+    {
+     "filename": "CR8000Cymbal.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Cymbal.wav"
+    },
+    {
+     "filename": "CR8000Hat_C.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Hat_C.wav"
+    },
+    {
+     "filename": "CR8000Hat_O.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Hat_O.wav"
+    },
+    {
+     "filename": "CR8000Kick.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Kick.wav"
+    },
+    {
+     "filename": "CR8000Rimshot.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Rimshot.wav"
+    },
+    {
+     "filename": "CR8000Snare.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Snare.wav"
+    },
+    {
+     "filename": "CR8000Tom_Hi.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Tom_Hi.wav"
+    },
+    {
+     "filename": "CR8000Tom_Lo.wav",
+     "url": "/drums/Roland%20CR-8000/CR8000Tom_Lo.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland Tr-606",
+   "sampleCount": 56,
+   "samples": [
+    {
+     "filename": "MaxV - Roland Tr-606 - Crash.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Crash.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Hat-Cl.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Hat-Cl.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Hat-Op.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Hat-Op.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Kick.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Kick.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Snare.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Snare.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Tom-Hi.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Tom-Hi.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Tom-Lo.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Tom-Lo.wav"
+    },
+    {
+     "filename": "MaxV - Roland Tr-606 - Tom-Med.wav",
+     "url": "/drums/Roland%20Tr-606/MaxV%20-%20Roland%20Tr-606%20-%20Tom-Med.wav"
+    },
+    {
+     "filename": "TR606Cymb01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb01.wav"
+    },
+    {
+     "filename": "TR606Cymb02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb02.wav"
+    },
+    {
+     "filename": "TR606Cymb03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb03.wav"
+    },
+    {
+     "filename": "TR606Cymb04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb04.wav"
+    },
+    {
+     "filename": "TR606Cymb05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb05.wav"
+    },
+    {
+     "filename": "TR606Cymb_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Cymb_OD.wav"
+    },
+    {
+     "filename": "TR606Hat_C01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C01.wav"
+    },
+    {
+     "filename": "TR606Hat_C02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C02.wav"
+    },
+    {
+     "filename": "TR606Hat_C03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C03.wav"
+    },
+    {
+     "filename": "TR606Hat_C04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C04.wav"
+    },
+    {
+     "filename": "TR606Hat_C05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C05.wav"
+    },
+    {
+     "filename": "TR606Hat_C_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_C_OD.wav"
+    },
+    {
+     "filename": "TR606Hat_O01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O01.wav"
+    },
+    {
+     "filename": "TR606Hat_O02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O02.wav"
+    },
+    {
+     "filename": "TR606Hat_O03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O03.wav"
+    },
+    {
+     "filename": "TR606Hat_O04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O04.wav"
+    },
+    {
+     "filename": "TR606Hat_O05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O05.wav"
+    },
+    {
+     "filename": "TR606Hat_O_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_O_OD.wav"
+    },
+    {
+     "filename": "TR606Hat_P01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P01.wav"
+    },
+    {
+     "filename": "TR606Hat_P02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P02.wav"
+    },
+    {
+     "filename": "TR606Hat_P03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P03.wav"
+    },
+    {
+     "filename": "TR606Hat_P04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P04.wav"
+    },
+    {
+     "filename": "TR606Hat_P05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P05.wav"
+    },
+    {
+     "filename": "TR606Hat_P_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Hat_P_OD.wav"
+    },
+    {
+     "filename": "TR606Kick01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick01.wav"
+    },
+    {
+     "filename": "TR606Kick02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick02.wav"
+    },
+    {
+     "filename": "TR606Kick03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick03.wav"
+    },
+    {
+     "filename": "TR606Kick04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick04.wav"
+    },
+    {
+     "filename": "TR606Kick05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick05.wav"
+    },
+    {
+     "filename": "TR606Kick_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Kick_OD.wav"
+    },
+    {
+     "filename": "TR606Snare01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare01.wav"
+    },
+    {
+     "filename": "TR606Snare02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare02.wav"
+    },
+    {
+     "filename": "TR606Snare03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare03.wav"
+    },
+    {
+     "filename": "TR606Snare04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare04.wav"
+    },
+    {
+     "filename": "TR606Snare05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare05.wav"
+    },
+    {
+     "filename": "TR606Snare_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606Snare_OD.wav"
+    },
+    {
+     "filename": "TR606TomHi01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi01.wav"
+    },
+    {
+     "filename": "TR606TomHi02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi02.wav"
+    },
+    {
+     "filename": "TR606TomHi03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi03.wav"
+    },
+    {
+     "filename": "TR606TomHi04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi04.wav"
+    },
+    {
+     "filename": "TR606TomHi05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi05.wav"
+    },
+    {
+     "filename": "TR606TomHi_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomHi_OD.wav"
+    },
+    {
+     "filename": "TR606TomLo01.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo01.wav"
+    },
+    {
+     "filename": "TR606TomLo02.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo02.wav"
+    },
+    {
+     "filename": "TR606TomLo03.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo03.wav"
+    },
+    {
+     "filename": "TR606TomLo04.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo04.wav"
+    },
+    {
+     "filename": "TR606TomLo05.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo05.wav"
+    },
+    {
+     "filename": "TR606TomLo_OD.wav",
+     "url": "/drums/Roland%20Tr-606/TR606TomLo_OD.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland Tr-707",
+   "sampleCount": 29,
+   "samples": [
+    {
+     "filename": "MaxV - 707 Drms -01.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-01.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -02.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-02.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -03.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-03.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -04.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-04.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -05.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-05.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -06.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-06.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -07.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-07.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -08.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-08.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -09.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-09.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -10.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-10.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -11.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-11.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -12.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-12.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -13.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-13.wav"
+    },
+    {
+     "filename": "MaxV - 707 Drms -14.wav",
+     "url": "/drums/Roland%20Tr-707/MaxV%20-%20707%20Drms%20-14.wav"
+    },
+    {
+     "filename": "TR-707Clap.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Clap.wav"
+    },
+    {
+     "filename": "TR-707Cow.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Cow.wav"
+    },
+    {
+     "filename": "TR-707Crash.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Crash.wav"
+    },
+    {
+     "filename": "TR-707Hat_C.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Hat_C.wav"
+    },
+    {
+     "filename": "TR-707Hat_O.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Hat_O.wav"
+    },
+    {
+     "filename": "TR-707Kick01.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Kick01.wav"
+    },
+    {
+     "filename": "TR-707Kick02.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Kick02.wav"
+    },
+    {
+     "filename": "TR-707Ride.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Ride.wav"
+    },
+    {
+     "filename": "TR-707RimShot.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707RimShot.wav"
+    },
+    {
+     "filename": "TR-707Snare01.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Snare01.wav"
+    },
+    {
+     "filename": "TR-707Snare02.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Snare02.wav"
+    },
+    {
+     "filename": "TR-707Tamborine.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Tamborine.wav"
+    },
+    {
+     "filename": "TR-707Tom_Hi.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Tom_Hi.wav"
+    },
+    {
+     "filename": "TR-707Tom_Lo.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Tom_Lo.wav"
+    },
+    {
+     "filename": "TR-707Tom_Mid.wav",
+     "url": "/drums/Roland%20Tr-707/TR-707Tom_Mid.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland Tr-727",
+   "sampleCount": 27,
+   "samples": [
+    {
+     "filename": "MaxV - Roland - 727_cbs 01.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_cbs%2001.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_hago 02.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_hago%2002.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_hbng 03.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_hbng%2003.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_htmb 04.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_htmb%2004.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_lago 05.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_lago%2005.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_lbng 06.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_lbng%2006.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_lcng 07.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_lcng%2007.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_ltmbl 08.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_ltmbl%2008.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_mrcs 09.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_mrcs%2009.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_qjda 10.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_qjda%2010.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_strc 11.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_strc%2011.wav"
+    },
+    {
+     "filename": "MaxV - Roland - 727_whst 12.wav",
+     "url": "/drums/Roland%20Tr-727/MaxV%20-%20Roland%20-%20727_whst%2012.wav"
+    },
+    {
+     "filename": "TR-727AgogoHi.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727AgogoHi.wav"
+    },
+    {
+     "filename": "TR-727AgogoLo.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727AgogoLo.wav"
+    },
+    {
+     "filename": "TR-727Bongo_Hi.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Bongo_Hi.wav"
+    },
+    {
+     "filename": "TR-727Bongo_Lo.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Bongo_Lo.wav"
+    },
+    {
+     "filename": "TR-727Cabasa.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Cabasa.wav"
+    },
+    {
+     "filename": "TR-727Conga_HiMut.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Conga_HiMut.wav"
+    },
+    {
+     "filename": "TR-727Conga_HiOp.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Conga_HiOp.wav"
+    },
+    {
+     "filename": "TR-727Conga_Lo.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Conga_Lo.wav"
+    },
+    {
+     "filename": "TR-727Maracas.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Maracas.wav"
+    },
+    {
+     "filename": "TR-727Quijada.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Quijada.wav"
+    },
+    {
+     "filename": "TR-727Starchime.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Starchime.wav"
+    },
+    {
+     "filename": "TR-727Timbale_Hi.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Timbale_Hi.wav"
+    },
+    {
+     "filename": "TR-727Timbale_Lo.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Timbale_Lo.wav"
+    },
+    {
+     "filename": "TR-727Whistle_L.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Whistle_L.wav"
+    },
+    {
+     "filename": "TR-727Whistle_S.wav",
+     "url": "/drums/Roland%20Tr-727/TR-727Whistle_S.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland Tr-808",
+   "sampleCount": 29,
+   "samples": [
+    {
+     "filename": "MaxV - Roland808 - 808Ma 10.wav",
+     "url": "/drums/Roland%20Tr-808/MaxV%20-%20Roland808%20-%20808Ma%2010.wav"
+    },
+    {
+     "filename": "TR-808Clap01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Clap01.wav"
+    },
+    {
+     "filename": "TR-808Clap02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Clap02.wav"
+    },
+    {
+     "filename": "TR-808Clave.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Clave.wav"
+    },
+    {
+     "filename": "TR-808Conga01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Conga01.wav"
+    },
+    {
+     "filename": "TR-808Conga02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Conga02.wav"
+    },
+    {
+     "filename": "TR-808Conga03.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Conga03.wav"
+    },
+    {
+     "filename": "TR-808Cow.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Cow.wav"
+    },
+    {
+     "filename": "TR-808Hat_C01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Hat_C01.wav"
+    },
+    {
+     "filename": "TR-808Hat_C02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Hat_C02.wav"
+    },
+    {
+     "filename": "TR-808Hat_O01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Hat_O01.wav"
+    },
+    {
+     "filename": "TR-808Hat_O02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Hat_O02.wav"
+    },
+    {
+     "filename": "TR-808Kick01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Kick01.wav"
+    },
+    {
+     "filename": "TR-808Kick02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Kick02.wav"
+    },
+    {
+     "filename": "TR-808Kick03.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Kick03.wav"
+    },
+    {
+     "filename": "TR-808Kick04.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Kick04.wav"
+    },
+    {
+     "filename": "TR-808Ride01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Ride01.wav"
+    },
+    {
+     "filename": "TR-808Ride02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Ride02.wav"
+    },
+    {
+     "filename": "TR-808Rim01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Rim01.wav"
+    },
+    {
+     "filename": "TR-808Rim02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Rim02.wav"
+    },
+    {
+     "filename": "TR-808Shaker01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Shaker01.wav"
+    },
+    {
+     "filename": "TR-808Shaker02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Shaker02.wav"
+    },
+    {
+     "filename": "TR-808Snare01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Snare01.wav"
+    },
+    {
+     "filename": "TR-808Snare02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Snare02.wav"
+    },
+    {
+     "filename": "TR-808Snare03.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Snare03.wav"
+    },
+    {
+     "filename": "TR-808Snare04.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Snare04.wav"
+    },
+    {
+     "filename": "TR-808Tom01.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Tom01.wav"
+    },
+    {
+     "filename": "TR-808Tom02.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Tom02.wav"
+    },
+    {
+     "filename": "TR-808Tom03.wav",
+     "url": "/drums/Roland%20Tr-808/TR-808Tom03.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland Tr-909",
+   "sampleCount": 75,
+   "samples": [
+    {
+     "filename": "MaxV - Roland909 - 909BDA 01.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909BDA%2001.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909BDB 02.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909BDB%2002.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909CLAP 03.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909CLAP%2003.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909HHA 04.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909HHA%2004.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909HHB 05.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909HHB%2005.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909HHC 06.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909HHC%2006.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909RIDE 07.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909RIDE%2007.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909RIM 08.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909RIM%2008.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909SDA 09.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909SDA%2009.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909SDB 10.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909SDB%2010.wav"
+    },
+    {
+     "filename": "MaxV - Roland909 - 909TOMA 11.wav",
+     "url": "/drums/Roland%20Tr-909/MaxV%20-%20Roland909%20-%20909TOMA%2011.wav"
+    },
+    {
+     "filename": "TR-909Clap.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Clap.wav"
+    },
+    {
+     "filename": "TR-909Crash.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Crash.wav"
+    },
+    {
+     "filename": "TR-909Hat C 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Hat%20C%2001.wav"
+    },
+    {
+     "filename": "TR-909Hat C 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Hat%20C%2002.wav"
+    },
+    {
+     "filename": "TR-909Hat O 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Hat%20O%2001.wav"
+    },
+    {
+     "filename": "TR-909Hat O 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Hat%20O%2002.wav"
+    },
+    {
+     "filename": "TR-909Hat O 03.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Hat%20O%2003.wav"
+    },
+    {
+     "filename": "TR-909Kick 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2001.wav"
+    },
+    {
+     "filename": "TR-909Kick 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2002.wav"
+    },
+    {
+     "filename": "TR-909Kick 03.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2003.wav"
+    },
+    {
+     "filename": "TR-909Kick 04.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2004.wav"
+    },
+    {
+     "filename": "TR-909Kick 05.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2005.wav"
+    },
+    {
+     "filename": "TR-909Kick 06.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2006.wav"
+    },
+    {
+     "filename": "TR-909Kick 07.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2007.wav"
+    },
+    {
+     "filename": "TR-909Kick 08.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2008.wav"
+    },
+    {
+     "filename": "TR-909Kick 09.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2009.wav"
+    },
+    {
+     "filename": "TR-909Kick 10.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2010.wav"
+    },
+    {
+     "filename": "TR-909Kick 11.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2011.wav"
+    },
+    {
+     "filename": "TR-909Kick 12.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2012.wav"
+    },
+    {
+     "filename": "TR-909Kick 13.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2013.wav"
+    },
+    {
+     "filename": "TR-909Kick 14.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2014.wav"
+    },
+    {
+     "filename": "TR-909Kick 15.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2015.wav"
+    },
+    {
+     "filename": "TR-909Kick 16.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2016.wav"
+    },
+    {
+     "filename": "TR-909Kick 17.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Kick%2017.wav"
+    },
+    {
+     "filename": "TR-909Ride.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Ride.wav"
+    },
+    {
+     "filename": "TR-909Rim.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Rim.wav"
+    },
+    {
+     "filename": "TR-909Snare 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2001.wav"
+    },
+    {
+     "filename": "TR-909Snare 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2002.wav"
+    },
+    {
+     "filename": "TR-909Snare 03.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2003.wav"
+    },
+    {
+     "filename": "TR-909Snare 04.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2004.wav"
+    },
+    {
+     "filename": "TR-909Snare 05.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2005.wav"
+    },
+    {
+     "filename": "TR-909Snare 06.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2006.wav"
+    },
+    {
+     "filename": "TR-909Snare 07.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2007.wav"
+    },
+    {
+     "filename": "TR-909Snare 08.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2008.wav"
+    },
+    {
+     "filename": "TR-909Snare 09.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2009.wav"
+    },
+    {
+     "filename": "TR-909Snare 10.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2010.wav"
+    },
+    {
+     "filename": "TR-909Snare 11.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2011.wav"
+    },
+    {
+     "filename": "TR-909Snare 12.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2012.wav"
+    },
+    {
+     "filename": "TR-909Snare 13.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2013.wav"
+    },
+    {
+     "filename": "TR-909Snare 14.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2014.wav"
+    },
+    {
+     "filename": "TR-909Snare 15.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2015.wav"
+    },
+    {
+     "filename": "TR-909Snare 16.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2016.wav"
+    },
+    {
+     "filename": "TR-909Snare 17.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2017.wav"
+    },
+    {
+     "filename": "TR-909Snare 18.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2018.wav"
+    },
+    {
+     "filename": "TR-909Snare 19.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2019.wav"
+    },
+    {
+     "filename": "TR-909Snare 20.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2020.wav"
+    },
+    {
+     "filename": "TR-909Snare 21.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2021.wav"
+    },
+    {
+     "filename": "TR-909Snare 22.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2022.wav"
+    },
+    {
+     "filename": "TR-909Snare 23.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2023.wav"
+    },
+    {
+     "filename": "TR-909Snare 24.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2024.wav"
+    },
+    {
+     "filename": "TR-909Snare 25.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2025.wav"
+    },
+    {
+     "filename": "TR-909Snare 26.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2026.wav"
+    },
+    {
+     "filename": "TR-909Snare 27.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2027.wav"
+    },
+    {
+     "filename": "TR-909Snare 28.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2028.wav"
+    },
+    {
+     "filename": "TR-909Snare 29.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2029.wav"
+    },
+    {
+     "filename": "TR-909Snare 30.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2030.wav"
+    },
+    {
+     "filename": "TR-909Snare 31.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2031.wav"
+    },
+    {
+     "filename": "TR-909Snare 32.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Snare%2032.wav"
+    },
+    {
+     "filename": "TR-909Tom Hi 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Hi%2001.wav"
+    },
+    {
+     "filename": "TR-909Tom Hi 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Hi%2002.wav"
+    },
+    {
+     "filename": "TR-909Tom Low 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Low%2001.wav"
+    },
+    {
+     "filename": "TR-909Tom Low 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Low%2002.wav"
+    },
+    {
+     "filename": "TR-909Tom Mid 01.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Mid%2001.wav"
+    },
+    {
+     "filename": "TR-909Tom Mid 02.wav",
+     "url": "/drums/Roland%20Tr-909/TR-909Tom%20Mid%2002.wav"
+    }
+   ]
+  },
+  {
+   "name": "Roland cr-78",
+   "sampleCount": 43,
+   "samples": [
+    {
+     "filename": "CR78Cowbell.wav",
+     "url": "/drums/Roland%20cr-78/CR78Cowbell.wav"
+    },
+    {
+     "filename": "CR78Guiro.wav",
+     "url": "/drums/Roland%20cr-78/CR78Guiro.wav"
+    },
+    {
+     "filename": "CR78Hat_C.wav",
+     "url": "/drums/Roland%20cr-78/CR78Hat_C.wav"
+    },
+    {
+     "filename": "CR78Hat_O.wav",
+     "url": "/drums/Roland%20cr-78/CR78Hat_O.wav"
+    },
+    {
+     "filename": "CR78Kick.wav",
+     "url": "/drums/Roland%20cr-78/CR78Kick.wav"
+    },
+    {
+     "filename": "CR78Perc01.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc01.wav"
+    },
+    {
+     "filename": "CR78Perc02.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc02.wav"
+    },
+    {
+     "filename": "CR78Perc03.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc03.wav"
+    },
+    {
+     "filename": "CR78Perc04.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc04.wav"
+    },
+    {
+     "filename": "CR78Perc05.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc05.wav"
+    },
+    {
+     "filename": "CR78Perc06.wav",
+     "url": "/drums/Roland%20cr-78/CR78Perc06.wav"
+    },
+    {
+     "filename": "CR78Rimshot.wav",
+     "url": "/drums/Roland%20cr-78/CR78Rimshot.wav"
+    },
+    {
+     "filename": "CR78Snare.wav",
+     "url": "/drums/Roland%20cr-78/CR78Snare.wav"
+    },
+    {
+     "filename": "CR78Tamborine.wav",
+     "url": "/drums/Roland%20cr-78/CR78Tamborine.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 01.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2001.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 02.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2002.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 03.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2003.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 04.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2004.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 05.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2005.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 06.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2006.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 07.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2007.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 08.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2008.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 09.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2009.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 10.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2010.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 11.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2011.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 12.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2012.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 13.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2013.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 14.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2014.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 15.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2015.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 16.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2016.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 17.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2017.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 18.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2018.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 19.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2019.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 20.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2020.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 21.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2021.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 22.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2022.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 23.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2023.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 24.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2024.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 25.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2025.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 26.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2026.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 27.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2027.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 28.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2028.wav"
+    },
+    {
+     "filename": "MaxV - Roland CR78 - 29.wav",
+     "url": "/drums/Roland%20cr-78/MaxV%20-%20Roland%20CR78%20-%2029.wav"
+    }
+   ]
+  },
+  {
+   "name": "Simmons SDS5",
+   "sampleCount": 23,
+   "samples": [
+    {
+     "filename": "SDHat_C.wav",
+     "url": "/drums/Simmons%20SDS5/SDHat_C.wav"
+    },
+    {
+     "filename": "SDHat_O.wav",
+     "url": "/drums/Simmons%20SDS5/SDHat_O.wav"
+    },
+    {
+     "filename": "SDKick01.wav",
+     "url": "/drums/Simmons%20SDS5/SDKick01.wav"
+    },
+    {
+     "filename": "SDKick02.wav",
+     "url": "/drums/Simmons%20SDS5/SDKick02.wav"
+    },
+    {
+     "filename": "SDKick03.wav",
+     "url": "/drums/Simmons%20SDS5/SDKick03.wav"
+    },
+    {
+     "filename": "SDKick04.wav",
+     "url": "/drums/Simmons%20SDS5/SDKick04.wav"
+    },
+    {
+     "filename": "SDPop01.wav",
+     "url": "/drums/Simmons%20SDS5/SDPop01.wav"
+    },
+    {
+     "filename": "SDPop02.wav",
+     "url": "/drums/Simmons%20SDS5/SDPop02.wav"
+    },
+    {
+     "filename": "SDSTomE2.wav",
+     "url": "/drums/Simmons%20SDS5/SDSTomE2.wav"
+    },
+    {
+     "filename": "SDSnare01.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare01.wav"
+    },
+    {
+     "filename": "SDSnare02.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare02.wav"
+    },
+    {
+     "filename": "SDSnare03.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare03.wav"
+    },
+    {
+     "filename": "SDSnare04.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare04.wav"
+    },
+    {
+     "filename": "SDSnare05.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare05.wav"
+    },
+    {
+     "filename": "SDSnare06.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare06.wav"
+    },
+    {
+     "filename": "SDSnare07.wav",
+     "url": "/drums/Simmons%20SDS5/SDSnare07.wav"
+    },
+    {
+     "filename": "SDTomEHi.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomEHi.wav"
+    },
+    {
+     "filename": "SDTomELo.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomELo.wav"
+    },
+    {
+     "filename": "SDTomHard.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomHard.wav"
+    },
+    {
+     "filename": "SDTomLo.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomLo.wav"
+    },
+    {
+     "filename": "SDTomMed.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomMed.wav"
+    },
+    {
+     "filename": "SDTomMid.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomMid.wav"
+    },
+    {
+     "filename": "SDTomNoise.wav",
+     "url": "/drums/Simmons%20SDS5/SDTomNoise.wav"
+    }
+   ]
+  }
+ ]
+}

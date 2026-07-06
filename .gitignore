@@ -14,13 +14,15 @@ Icon?
 
 # ── Legacy / archived directories (no longer part of the active loopy-mapper-react project) ──
 # These are kept on disk for reference but excluded from the repo.
-ipad/
-Loopy Project/
-projects/
-docs/
-drambo/
-scripts/
-tools/
+# Anchored to the repo root so they don't shadow same-named dirs inside
+# loopy-mapper-react/ (e.g. loopy-mapper-react/scripts/).
+/ipad/
+/Loopy Project/
+/projects/
+/docs/
+/drambo/
+/scripts/
+/tools/
 *.lpproj
 CLAUDE.md
 

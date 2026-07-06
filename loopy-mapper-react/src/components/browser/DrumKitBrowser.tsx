@@ -1,118 +1,132 @@
 // ═══════════════════════════════════════════════════════════════════
-// DRUM KIT BROWSER — Browse 196 hardware drum machines,
-// preview samples, and assign to module tracks via Tone.Sampler.
-// ═══════════════════════════════════════════════════════════════
+// DRUM KIT BROWSER — Browse built-in kits (bundled, work with no backend)
+// and the full server library, preview, and assign to module tracks.
+// "Auto-map" places a whole kit onto pads by filename (see drumMapping).
+// ═══════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Music, Play, Square, Loader2, ChevronRight, Drum, Search } from 'lucide-react';
+import { Play, Square, Loader2, Drum, Search, Wand2 } from 'lucide-react';
 import { useLooperStore } from '../../store/store';
 import { synthEngine } from '../../lib/synthEngine';
+import { detectDrumNote } from '../../lib/drumMapping';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8766';
 
-interface KitEntry {
-  name: string;
-  sampleCount: number;
-  path: string;
-}
+type KitSource = 'builtin' | 'server';
 
 interface SampleEntry {
   filename: string;
   url: string;
-  size: number;
+  size?: number;
+}
+
+interface KitEntry {
+  name: string;
+  sampleCount: number;
+  source: KitSource;
+  samples?: SampleEntry[]; // present for built-in kits (from the manifest)
+}
+
+interface Manifest {
+  kits: Array<{ name: string; sampleCount: number; samples: SampleEntry[] }>;
+}
+
+/** Resolve a sample URL to something Tone.Sampler/fetch can load. */
+function absUrl(url: string, source: KitSource): string {
+  if (url.startsWith('http')) return url;
+  // Built-in kits are static assets on the frontend origin; server kits live
+  // behind the backend API base.
+  return source === 'server' ? `${API_BASE}${url}` : url;
 }
 
 export const DrumKitBrowser: React.FC = () => {
-  const [kits, setKits] = useState<KitEntry[]>([]);
+  const [builtinKits, setBuiltinKits] = useState<KitEntry[]>([]);
+  const [serverKits, setServerKits] = useState<KitEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedKit, setSelectedKit] = useState<string | null>(null);
+  const [selectedKit, setSelectedKit] = useState<KitEntry | null>(null);
   const [samples, setSamples] = useState<SampleEntry[]>([]);
   const [samplesLoading, setSamplesLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [previewingSample, setPreviewingSample] = useState<string | null>(null);
   const [previewVoice, setPreviewVoice] = useState<any>(null);
-  const [backendDown, setBackendDown] = useState(false);
+  const [serverDown, setServerDown] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  // Get the currently editing track from the midi editor state (or the OUT menu context)
-  const editingModuleId = useLooperStore(s => s.ui.midiEditorModuleId);
-  const editingTrackIdx = useLooperStore(s => s.ui.midiEditorTrackIndex);
-
-  // Fetch kits on mount
-  const fetchKits = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setBackendDown(false);
-    try {
-      const r = await fetch(`${API_BASE}/api/drums`);
-      if (!r.ok) {
-        throw new Error(`Server returned ${r.status}`);
+  // Load bundled kits from the static manifest (always available, no backend).
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/drums/manifest.json');
+        if (r.ok) {
+          const data = (await r.json()) as Manifest;
+          setBuiltinKits(data.kits.map(k => ({
+            name: k.name,
+            sampleCount: k.sampleCount,
+            source: 'builtin' as const,
+            samples: k.samples,
+          })));
+        }
+      } catch {
+        // No bundled kits — that's fine, the server library may still load.
+      } finally {
+        setLoading(false);
       }
-      const data = await r.json();
-      setKits(data);
-    } catch (err: any) {
-      // Detect connection-refused (backend not running) vs. other fetch errors
-      if (
-        err.message?.includes('Failed to fetch') ||
-        err.message?.includes('NetworkError') ||
-        err.message?.includes('ERR_CONNECTION_REFUSED') ||
-        err.name === 'TypeError'
-      ) {
-        setBackendDown(true);
-        setError(null);
-      } else {
-        setError(err.message || 'Unknown error');
-        setBackendDown(false);
-      }
-    }
-    setLoading(false);
+    })();
   }, []);
 
-  useEffect(() => {
-    fetchKits();
-  }, [fetchKits]);
+  // Load the server library (the full configurable directory).
+  const fetchServerKits = useCallback(async () => {
+    setServerDown(false);
+    try {
+      const r = await fetch(`${API_BASE}/api/drums`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = (await r.json()) as Array<{ name: string; sampleCount: number }>;
+      setServerKits(data.map(k => ({ name: k.name, sampleCount: k.sampleCount, source: 'server' as const })));
+    } catch {
+      setServerDown(true);
+      setServerKits([]);
+    }
+  }, []);
 
-  // Retry when backend was down
+  useEffect(() => { fetchServerKits(); }, [fetchServerKits]);
+
   const retryConnect = useCallback(async () => {
     setRetrying(true);
-    await fetchKits();
+    await fetchServerKits();
     setRetrying(false);
-  }, [fetchKits]);
+  }, [fetchServerKits]);
 
-  // Fetch samples when a kit is selected
-  const selectKit = useCallback(async (kitName: string) => {
-    setSelectedKit(kitName);
+  // Select a kit → get its samples (inline for built-in, fetched for server).
+  const selectKit = useCallback(async (kit: KitEntry) => {
+    setSelectedKit(kit);
+    if (kit.source === 'builtin') {
+      setSamples(kit.samples ?? []);
+      return;
+    }
     setSamplesLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/drums/${encodeURIComponent(kitName)}`);
-      const data = await res.json();
-      setSamples(data);
+      const res = await fetch(`${API_BASE}/api/drums/${encodeURIComponent(kit.name)}`);
+      setSamples(await res.json());
     } catch {
       setSamples([]);
     }
     setSamplesLoading(false);
   }, []);
 
-  // Play a preview of a sample through a temporary Synth voice
-  const previewSample = useCallback(async (sample: SampleEntry) => {
-    // Stop any existing preview
+  // Preview a sample through a temporary sampler.
+  const previewSample = useCallback(async (sample: SampleEntry, source: KitSource) => {
     if (previewVoice) {
       try { previewVoice.dispose(); } catch { /* ignore */ }
     }
-
     if (previewingSample === sample.filename) {
       setPreviewingSample(null);
       return;
     }
-
     setPreviewingSample(null);
-
-    // Create a temporary sampler for preview
     try {
       const Tone = await import('tone');
       const sampler = new Tone.Sampler({
-        urls: { C3: sample.url },
+        urls: { C3: absUrl(sample.url, source) },
         baseUrl: '',
         onload: () => {
           setPreviewingSample(sample.filename);
@@ -121,31 +135,22 @@ export const DrumKitBrowser: React.FC = () => {
         },
       }).toDestination();
     } catch {
-      // If Tone.js import fails, we're likely not initialized yet
+      // Tone not ready yet.
     }
   }, [previewingSample, previewVoice]);
 
-  // Assign sample to the track matching the given MIDI note
-  const assignSample = useCallback((sample: SampleEntry, midiNote: number) => {
+  // Assign one sample to every rhythm track that uses `midiNote`.
+  const assignSample = useCallback((sample: SampleEntry, midiNote: number, source: KitSource) => {
     const store = useLooperStore.getState();
+    const absoluteUrl = absUrl(sample.url, source);
 
-    // Find any rhythm module that has a track with this MIDI note
     for (const mod of store.song.modules) {
       if (mod.type !== 'rhythm') continue;
       const track = mod.tracks.find(t => t.midiNote === midiNote);
       if (!track) continue;
-      const trackIndex = track.index;
 
-      // Prepend API base for absolute URL (Tone.Sampler needs absolute URLs)
-      const absoluteUrl = sample.url.startsWith('http') ? sample.url : `${API_BASE}${sample.url}`;
-      const engine = {
-        type: 'sampler' as const,
-        sampleMap: { [midiNote]: absoluteUrl },
-        rootNote: midiNote,
-      };
-
-      // Set the sound source to sample type with the new engine
-      store.setSoundSource(mod.id, trackIndex, {
+      const engine = { type: 'sampler' as const, sampleMap: { [midiNote]: absoluteUrl }, rootNote: midiNote };
+      store.setSoundSource(mod.id, track.index, {
         type: 'sample',
         sampleId: sample.filename,
         sampleName: sample.filename.replace(/\.\w+$/, ''),
@@ -155,27 +160,32 @@ export const DrumKitBrowser: React.FC = () => {
         velocityScale: 1.0,
         triggerMode: 'oneShot' as const,
       });
-
-      // Create the synth voice
-      const voiceId = `${mod.id}:${trackIndex}`;
-      synthEngine.setVoice(voiceId, engine, track.volume);
-
-      console.log(`[DrumKitBrowser] Assigned ${sample.filename} to ${mod.label} > ${track.label} (MIDI ${midiNote})`);
+      synthEngine.setVoice(`${mod.id}:${track.index}`, engine, track.volume);
     }
   }, []);
 
-  // Convert MIDI note to note name
-  const midiToNote = (midi: number): string => {
-    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const octave = Math.floor(midi / 12) - 1;
-    return `${notes[midi % 12]}${octave}`;
-  };
+  // Auto-map a whole kit onto pads by filename. First sample per detected role
+  // wins its note; duplicates/unknowns are skipped (use the dropdown to place).
+  const autoAssignKit = useCallback(() => {
+    if (!selectedKit) return;
+    const used = new Set<number>();
+    let placed = 0;
+    for (const s of samples) {
+      const note = detectDrumNote(s.filename);
+      if (note === null || used.has(note)) continue;
+      used.add(note);
+      assignSample(s, note, selectedKit.source);
+      placed++;
+    }
+    console.log(`[DrumKitBrowser] Auto-mapped ${placed} samples from ${selectedKit.name}`);
+  }, [selectedKit, samples, assignSample]);
 
-  const filteredKits = search
-    ? kits.filter(k => k.name.toLowerCase().includes(search.toLowerCase()))
-    : kits;
+  const matches = (k: KitEntry) => !search || k.name.toLowerCase().includes(search.toLowerCase());
+  const shownBuiltin = builtinKits.filter(matches);
+  const shownServer = serverKits.filter(matches);
+  const totalKits = builtinKits.length + serverKits.length;
 
-  if (loading && !backendDown) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
@@ -183,49 +193,26 @@ export const DrumKitBrowser: React.FC = () => {
     );
   }
 
-  // Backend not running — show actionable guidance
-  if (backendDown) {
-    const pythonCmd = 'cd loopy-mapper-react && uvicorn backend.main:app --reload --port 8766';
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 px-4">
-        <div className="w-10 h-10 rounded-full bg-amber-900/40 flex items-center justify-center">
-          <Drum size={20} className="text-amber-400 opacity-70" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-amber-200 mb-1">Drum Server Not Running</p>
-          <p className="text-[11px] text-zinc-400 max-w-xs leading-relaxed">
-            The backend API that serves drum samples is not reachable at{' '}
-            <code className="text-amber-400/80 bg-zinc-800 px-1 rounded">{API_BASE}</code>.
-            Start it in another terminal:
-          </p>
-          <pre className="mt-2 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[10px] text-zinc-300 text-left overflow-x-auto select-all">
-{/* eslint-disable-next-line no-irregular-whitespace */}
-{`uvicorn backend.main:app --reload --port 8766`}
-          </pre>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={retryConnect}
-            disabled={retrying}
-            className="px-3 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-xs text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {retrying && <Loader2 size={12} className="animate-spin" />}
-            {retrying ? 'Retrying...' : 'Retry'}
-          </button>
-          <button
-            onClick={() => setBackendDown(false)}
-            className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-400 transition-colors"
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Rhythm-track MIDI notes available to assign to (for the dropdown).
+  const store = useLooperStore.getState();
+  const uniqueMidiNotes = [...new Set(
+    store.song.modules.filter(m => m.type === 'rhythm').flatMap(m => m.tracks.map(t => t.midiNote))
+  )].sort((a, b) => a - b);
 
-  if (error) {
-    return <div className="p-4 text-red-400 text-sm">{error}</div>;
-  }
+  const renderKitButton = (kit: KitEntry) => (
+    <button
+      key={`${kit.source}:${kit.name}`}
+      onClick={() => selectKit(kit)}
+      className={`w-full text-left px-2 py-1.5 text-[11px] flex items-center justify-between transition-colors ${
+        selectedKit?.name === kit.name && selectedKit?.source === kit.source
+          ? 'bg-orange-900/30 text-orange-300 border-r-2 border-orange-500 font-semibold'
+          : 'text-zinc-200 hover:bg-zinc-800 hover:text-white'
+      }`}
+    >
+      <span className="truncate flex-1">{kit.name}</span>
+      <span className="text-[9px] text-zinc-500 ml-1">{kit.sampleCount}</span>
+    </button>
+  );
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
@@ -234,7 +221,7 @@ export const DrumKitBrowser: React.FC = () => {
         <div className="flex items-center gap-2">
           <Drum size={14} className="text-orange-400" />
           <h2 className="text-xs font-semibold text-white">Drum Kits</h2>
-          <span className="text-[10px] text-zinc-500">({kits.length} kits)</span>
+          <span className="text-[10px] text-zinc-500">({totalKits})</span>
         </div>
         <button
           onClick={() => useLooperStore.getState().toggleDrumBrowser()}
@@ -259,30 +246,56 @@ export const DrumKitBrowser: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Kit List */}
         <div className="w-48 border-r border-zinc-800 overflow-y-auto flex-shrink-0">
-          {filteredKits.map(kit => (
-            <button
-              key={kit.name}
-              onClick={() => selectKit(kit.name)}
-              className={`w-full text-left px-2 py-1.5 text-[11px] flex items-center justify-between transition-colors ${
-                selectedKit === kit.name
-                  ? 'bg-orange-900/30 text-orange-300 border-r-2 border-orange-500 font-semibold'
-                  : 'text-zinc-200 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              <span className="truncate flex-1">{kit.name}</span>
-              <span className="text-[9px] text-zinc-500 ml-1">{kit.sampleCount}</span>
-            </button>
-          ))}
+          {shownBuiltin.length > 0 && (
+            <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-orange-500/70 bg-zinc-900/60 sticky top-0">
+              Built-in
+            </div>
+          )}
+          {shownBuiltin.map(renderKitButton)}
+
+          <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-500 bg-zinc-900/60 flex items-center justify-between">
+            <span>Library {serverDown ? '(offline)' : `(${serverKits.length})`}</span>
+            {serverDown && (
+              <button
+                onClick={retryConnect}
+                disabled={retrying}
+                className="text-[9px] text-amber-400 hover:text-amber-300 disabled:opacity-50"
+                title="Retry connecting to the backend"
+              >
+                {retrying ? '…' : 'retry'}
+              </button>
+            )}
+          </div>
+          {serverDown ? (
+            <div className="px-2 py-2 text-[10px] text-zinc-600 leading-snug">
+              Backend not running. Built-in kits still work; start the server for your full library.
+            </div>
+          ) : (
+            shownServer.map(renderKitButton)
+          )}
         </div>
 
         {/* Sample List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-w-0">
           {!selectedKit && (
             <div className="flex items-center justify-center h-full text-zinc-600 text-xs">
               Select a kit to browse samples
+            </div>
+          )}
+
+          {selectedKit && (
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 sticky top-0 bg-zinc-950">
+              <span className="text-[11px] text-zinc-400 truncate">{selectedKit.name}</span>
+              <button
+                onClick={autoAssignKit}
+                className="flex items-center gap-1 px-2 py-0.5 rounded bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-medium flex-shrink-0"
+                title="Auto-map this kit onto pads by filename"
+              >
+                <Wand2 size={11} /> Auto-map
+              </button>
             </div>
           )}
 
@@ -296,55 +309,31 @@ export const DrumKitBrowser: React.FC = () => {
             <div className="py-1">
               {samples.map(sample => {
                 const isPreviewing = previewingSample === sample.filename;
-                const store = useLooperStore.getState();
-                const allRhythmTracks = store.song.modules
-                  .filter(m => m.type === 'rhythm')
-                  .flatMap(m => m.tracks.map(t => ({ ...t, moduleId: m.id, moduleLabel: m.label })));
-                const uniqueMidiNotes = [...new Set(allRhythmTracks.map(t => t.midiNote))].sort((a, b) => a - b);
-
-                // Get assigned track info for this sample
-                const assignedTrack = allRhythmTracks.find(t => {
-                  const src = t.soundSource;
-                  return src.type === 'sample' && src.sampleId === sample.filename;
-                });
-
+                const detected = detectDrumNote(sample.filename);
                 return (
-                  <div
-                    key={sample.filename}
-                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 transition-colors"
-                  >
-                    {/* Assign dropdown */}
+                  <div key={sample.filename} className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 transition-colors">
+                    {/* Assign dropdown (manual override) */}
                     <select
-                      value={assignedTrack ? assignedTrack.midiNote : ''}
-                      onChange={e => {
-                        const val = e.target.value;
-                        if (val) assignSample(sample, Number(val));
-                      }}
-                      className="w-12 bg-zinc-800 border border-zinc-700 rounded px-1 py-0.5 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-500 flex-shrink-0"
-                      title="Assign to MIDI note"
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) assignSample(sample, Number(e.target.value), selectedKit.source); }}
+                      className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1 py-0.5 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-500 flex-shrink-0"
+                      title={detected !== null ? `Detected note ${detected}` : 'Assign to a pad'}
                     >
-                      <option value="">--</option>
-                      {uniqueMidiNotes.map(midiNote => (
-                        <option key={midiNote} value={midiNote}>
-                          {midiNote}
-                        </option>
-                      ))}
+                      <option value="">{detected !== null ? `→${detected}?` : '--'}</option>
+                      {uniqueMidiNotes.map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
 
-                    {/* Preview button */}
+                    {/* Preview */}
                     <button
-                      onClick={() => previewSample(sample)}
+                      onClick={() => previewSample(sample, selectedKit.source)}
                       className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isPreviewing
-                          ? 'bg-green-600 text-white'
-                          : 'bg-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-700'
+                        isPreviewing ? 'bg-green-600 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-700'
                       }`}
                       title={isPreviewing ? 'Stop' : 'Preview'}
                     >
                       {isPreviewing ? <Square size={10} /> : <Play size={10} className="ml-0.5" />}
                     </button>
 
-                    {/* Sample filename */}
                     <span className="text-[11px] text-white flex-1 truncate" title={sample.filename}>
                       {sample.filename}
                     </span>
