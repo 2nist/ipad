@@ -116,6 +116,8 @@ export const createUiSlice: StateCreator<
                 activeEditorPanel: panel,
                 editingModuleId: moduleId ?? null,
                 editingTrackIndex: trackIndex ?? null,
+                // Opening any real panel implies showing the panel that hosts it.
+                rightPanelVisible: panel.type === 'none' ? state.ui.rightPanelVisible : true,
             },
         }));
     },

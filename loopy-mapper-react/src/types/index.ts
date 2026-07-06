@@ -729,6 +729,8 @@ export interface LooperStoreActions {
     addSectionMarker(sectionId: string, marker: SectionMarker): void;
     removeSectionMarker(sectionId: string, markerIndex: number): void;
     setSongMetadata(updates: Partial<SongMetadata>): void;
+    addMidiBinding(binding: MidiBinding): void;
+    setMidiBindings(bindings: MidiBinding[]): void;
 
     // Track actions
     updateTrack(moduleId: string, trackIndex: number, updates: Partial<ModuleTrackConfig>): void;

@@ -472,10 +472,8 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
 
             <button
               onClick={() => {
-                // Open module editor in right panel
-                const store = useLooperStore.getState();
-                store.setEditorPanel({ type: 'module', moduleId: module.id });
-                store.ui.rightPanelVisible = true;
+                // setEditorPanel makes the right panel visible as part of opening it
+                useLooperStore.getState().setEditorPanel({ type: 'module', moduleId: module.id });
               }}
               className="w-6 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-blue-400 transition-colors"
               title="Module Settings"

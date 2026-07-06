@@ -7,7 +7,7 @@ import { v4 as uuid } from 'uuid';
 import type {
     SongObject, SongMetadata, SongSection, ModuleCard, ModulePreset,
     ModuleTrackConfig, SoundSource, SoundEngine, ChordStep, SectionMarker, TransitionMode,
-    LooperStore, LooperStoreActions,
+    MidiBinding, LooperStore, LooperStoreActions,
 } from '../types';
 import { getPresetById, MODULE_PRESETS, nextPatternName, resetPatternNames, RHYTHM_MODE_COLORS } from './presets';
 import { synthEngine } from '../lib/synthEngine';
@@ -56,6 +56,8 @@ export interface SongSlice {
     addSectionMarker: LooperStoreActions['addSectionMarker'];
     removeSectionMarker: LooperStoreActions['removeSectionMarker'];
     setSongMetadata: LooperStoreActions['setSongMetadata'];
+    addMidiBinding: LooperStoreActions['addMidiBinding'];
+    setMidiBindings: LooperStoreActions['setMidiBindings'];
     updateTrack: LooperStoreActions['updateTrack'];
     assignClipToTrack: LooperStoreActions['assignClipToTrack'];
     setSoundSource: LooperStoreActions['setSoundSource'];
@@ -283,6 +285,21 @@ export const createSongSlice: StateCreator<
                 ...state.song,
                 metadata: { ...state.song.metadata, ...updates },
             },
+        }));
+    },
+
+    addMidiBinding: (binding: MidiBinding) => {
+        set(state => ({
+            song: {
+                ...state.song,
+                midiBindings: [...state.song.midiBindings, binding],
+            },
+        }));
+    },
+
+    setMidiBindings: (bindings: MidiBinding[]) => {
+        set(state => ({
+            song: { ...state.song, midiBindings: bindings },
         }));
     },
 
