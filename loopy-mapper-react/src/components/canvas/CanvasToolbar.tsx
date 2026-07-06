@@ -11,6 +11,9 @@ export const CanvasToolbar: React.FC = () => {
     const setBpm = useLooperStore(s => s.setBpm);
     const setSongMetadata = useLooperStore(s => s.setSongMetadata);
     const globalPlay = useLooperStore(s => s.globalPlay);
+    const metronome = useLooperStore(s => s.metronome);
+    const setMetronomeEnabled = useLooperStore(s => s.setMetronomeEnabled);
+    const setMetronomeVolume = useLooperStore(s => s.setMetronomeVolume);
 
     return (
         <div className="flex items-center gap-4 px-4 py-2 bg-zinc-900 border-b border-zinc-700 text-white text-sm">
@@ -65,6 +68,30 @@ export const CanvasToolbar: React.FC = () => {
             >
                 {isPlaying ? '⏹ STOP' : '▶ PLAY'}
             </button>
+
+            {/* Metronome */}
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => setMetronomeEnabled(!metronome.enabled)}
+                    title={metronome.enabled ? 'Metronome on — click to mute' : 'Metronome off — click to enable'}
+                    className={`px-2 py-1 rounded text-sm ${metronome.enabled
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                            : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-400'
+                        }`}
+                >
+                    🎵
+                </button>
+                <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={Math.round(metronome.volume * 100)}
+                    onChange={e => setMetronomeVolume(Number(e.target.value) / 100)}
+                    disabled={!metronome.enabled}
+                    title={`Metronome volume ${Math.round(metronome.volume * 100)}%`}
+                    className="w-20 accent-blue-500 disabled:opacity-40"
+                />
+            </div>
 
             {/* Spacer */}
             <div className="flex-1" />

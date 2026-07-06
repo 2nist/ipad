@@ -32,7 +32,6 @@ export class TransportClockImpl implements TransportClock {
     private rafId: number | null = null;
     private lastBeatFloor: number = -1;
     private lastBarFloor: number = -1;
-    private lastFrameTime: number | null = null;
 
     // Source of truth for position. Beats accumulate incrementally each frame
     // (see advance()) instead of being derived from `elapsedWallTime / secondsPerBeat`,
@@ -88,7 +87,6 @@ export class TransportClockImpl implements TransportClock {
 
         this.isPlaying = true;
         this.accumulatedBeats = 0;
-        this.lastFrameTime = performance.now();
         this.lastBeatFloor = -1;
         this.lastBarFloor = -1;
 
@@ -115,7 +113,6 @@ export class TransportClockImpl implements TransportClock {
         this.isPlaying = false;
         this.stopScheduler();
         this.accumulatedBeats = 0;
-        this.lastFrameTime = null;
         this.lastBeatFloor = -1;
         this.lastBarFloor = -1;
 
@@ -138,7 +135,8 @@ export class TransportClockImpl implements TransportClock {
         if (!this.isPlaying) return;
         this.isPlaying = false;
         this.stopScheduler();
-        this.lastFrameTime = null;
+        // Pause the audio clock too so sampled ticks freeze with the playhead.
+        Tone.Transport.pause();
         console.log('[Clock] Paused at beat:', this.accumulatedBeats.toFixed(2));
     }
 
@@ -146,7 +144,8 @@ export class TransportClockImpl implements TransportClock {
     resume(): void {
         if (this.isPlaying) return;
         this.isPlaying = true;
-        this.lastFrameTime = performance.now();
+        // Resume the audio clock from where pause() left it.
+        Tone.Transport.start();
         // Don't re-fire onBeat/onBar for the beat/bar we already announced before pausing.
         this.lastBeatFloor = Math.floor(this.accumulatedBeats);
         this.lastBarFloor = Math.floor(this.accumulatedBeats / this.beatsPerBar);
@@ -242,10 +241,14 @@ export class TransportClockImpl implements TransportClock {
             if (!this.isPlaying) return;
             this.rafId = requestAnimationFrame(loop);
 
-            const now = performance.now();
-            const deltaMs = now - (this.lastFrameTime ?? now);
-            this.lastFrameTime = now;
-            this.advance(deltaMs);
+            // Sample musical position from the AUDIO clock (Tone.Transport)
+            // instead of integrating our own performance.now() deltas. Transport
+            // ticks are the single source of truth for time, so the visual
+            // playhead and beat/bar events can never drift from what's actually
+            // playing. Ticks accrue at the scheduled tempo, so this stays correct
+            // across BPM changes. advance() is retained for headless tests, which
+            // drive time by hand and never run this rAF loop.
+            this.accumulatedBeats = Tone.Transport.ticks / Tone.Transport.PPQ;
 
             const pos = this.getPosition();
             const ab = pos.absoluteBeat;

@@ -2,6 +2,30 @@
 // TESTS — HarmonyEngine, TransportClock, VoicingEngine
 // ═══════════════════════════════════════════════════════════════════
 
+import { vi } from 'vitest';
+
+// The headless test env has no AudioContext, so the real Tone.Transport's `bpm`
+// is undefined and clock.start()/pause()/resume() throw. Stub just the Transport
+// surface the clock touches — musical time here is driven by clock.advance(),
+// not the Transport. Everything else in Tone stays real.
+vi.mock('tone', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('tone')>();
+    const Transport = {
+        bpm: { value: 120 },
+        position: '0:0:0',
+        ticks: 0,
+        PPQ: 192,
+        start: () => {},
+        stop: () => {},
+        pause: () => {},
+        cancel: () => {},
+        clear: () => {},
+        schedule: () => 0,
+        scheduleRepeat: () => 0,
+    };
+    return { ...actual, Transport };
+});
+
 import { HarmonyEngineCore, SCALE_INTERVALS, CHORD_INTERVALS, NOTE_NAMES } from '../lib/harmonyEngine';
 import { VoicingEngine } from '../lib/voicingEngine';
 import { TransportClockImpl } from '../lib/transportClock';

@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import * as Tone from 'tone';
 import { Play, Square, Trash2, ChevronDown, Grid3X3, Plus, Minus } from 'lucide-react';
 import { useLooperStore } from '../../store/store';
 import { synthEngine } from '../../lib/synthEngine';
@@ -34,7 +35,11 @@ export const MidiSequencerPanel: React.FC = () => {
     Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 }))
   );
   const [currentStep, setCurrentStep] = useState(0);
-  const prevBeatRef = useRef(-1);
+
+  // Keep the latest step data in a ref so the Transport callback (registered
+  // once per play) always reads current edits without needing to reschedule.
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
 
   // Load existing MIDI data into steps when track changes
   useEffect(() => {
@@ -43,31 +48,45 @@ export const MidiSequencerPanel: React.FC = () => {
     setSteps(Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 })));
   }, [moduleId, trackIndex]);
 
-  // Follow transport position — only trigger live notes when the panel is
-  // open AND the track has no stored clipData (otherwise playSequence handles it).
+  // Live playback on the AUDIO clock. Previously steps were triggered from a
+  // React effect keyed on the rAF-driven store position, so note timing jittered
+  // with the animation frame — the "wonky beat". Tone.Transport.scheduleRepeat
+  // fires on the audio thread and passes an exact `time`, so steps are
+  // sample-accurate and stay locked to the metronome and stored patterns.
+  // Only runs when the panel is open, transport is playing, and the track has
+  // NO stored clipData (playSequence handles stored clips).
   useEffect(() => {
-    if (!isPlaying) return;
-    if (!isOpen) return;
-    const hasStoredPattern = track?.soundSource.type === 'midiClip' && (track.soundSource as any).clipData?.byteLength > 0;
+    if (!isPlaying || !isOpen || !track || !module) return;
+    if (track.soundSource.type === 'audioInput') return;
+    const hasStoredPattern =
+      track.soundSource.type === 'midiClip' &&
+      (track.soundSource as any).clipData?.byteLength > 0;
     if (hasStoredPattern) return;
 
-    const sixteenthBeat = Math.floor(position.beatInBar * 4) % STEPS;
-    if (sixteenthBeat !== prevBeatRef.current) {
-      prevBeatRef.current = sixteenthBeat;
-      setCurrentStep(sixteenthBeat);
+    const voiceId = `${module.id}:${track.index}`;
+    const midiNote = track.midiNote;
+    const ticksPerStep = Tone.Transport.PPQ / 4;        // one 16th note
+    const gate = Tone.Time('16n').toSeconds() * 0.9;    // note length, just under a step
 
-      // Play active steps on beat
-      if (steps[sixteenthBeat]?.active && track && module) {
-        const voiceId = `${module.id}:${track.index}`;
-        const vel = steps[sixteenthBeat].velocity;
-        synthEngine.noteOn(voiceId, track.midiNote, vel);
-        // Short note-off for one-shot feel
-        setTimeout(() => {
-          synthEngine.noteOff(voiceId, track.midiNote);
-        }, 100);
+    const eventId = Tone.Transport.scheduleRepeat((time) => {
+      // Derive the step index from transport position so step 1 always lands on
+      // the downbeat, even when playback started mid-bar.
+      const idx = Math.round(Tone.Transport.getTicksAtTime(time) / ticksPerStep) % STEPS;
+      const s = stepsRef.current[idx];
+      if (s?.active) {
+        synthEngine.noteOn(voiceId, midiNote, s.velocity, time);
+        synthEngine.noteOff(voiceId, midiNote, time + gate);
       }
-    }
-  }, [position.beatInBar, isPlaying, steps, track, module, isOpen]);
+      // Sync the visual highlight to the audio event. Never setState directly
+      // inside a Transport callback — it runs off the animation frame and can
+      // fire many times per frame; Tone.Draw defers it to the nearest frame.
+      Tone.Draw.schedule(() => setCurrentStep(idx), time);
+    }, '16n', 0);
+
+    return () => {
+      Tone.Transport.clear(eventId);
+    };
+  }, [isPlaying, isOpen, track, module]);
 
   if (!isOpen || !module || !track) return null;
 

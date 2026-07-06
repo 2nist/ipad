@@ -5,6 +5,7 @@
 import type { StateCreator } from 'zustand';
 import type { ClockPosition, TransitionMode } from '../types';
 import type { LooperStoreType } from './store';
+import { synthEngine } from '../lib/synthEngine';
 
 export interface TransportSlice {
     transport: {
@@ -13,6 +14,12 @@ export interface TransportSlice {
         position: ClockPosition;
         activeSectionId: string | null;
         activeSectionIndex: number;
+    };
+    // Global metronome (click track). Kept OUTSIDE `transport` so it survives
+    // song loads and transport resets — it's a monitoring preference, not song data.
+    metronome: {
+        enabled: boolean;
+        volume: number; // 0..1, applied to the '__metronome__' synth voice
     };
     globalPlay: () => void;
     globalStop: () => void;
@@ -24,6 +31,8 @@ export interface TransportSlice {
     nextSection: () => void;
     previousSection: () => void;
     setTransitionMode: (mode: TransitionMode) => void;
+    setMetronomeEnabled: (enabled: boolean) => void;
+    setMetronomeVolume: (volume: number) => void;
 }
 
 const DEFAULT_POSITION: ClockPosition = {
@@ -57,6 +66,8 @@ export const createTransportSlice: StateCreator<
     TransportSlice
 > = (set, get) => ({
     transport: { ...DEFAULT_TRANSPORT, position: { ...DEFAULT_POSITION } },
+
+    metronome: { enabled: true, volume: 0.3 },
 
     globalPlay: () => {
         const { engines } = get();
@@ -224,5 +235,16 @@ export const createTransportSlice: StateCreator<
         if (sectionId) {
             get().updateSection(sectionId, { transition: mode });
         }
+    },
+
+    setMetronomeEnabled: (enabled: boolean) => {
+        set({ metronome: { ...get().metronome, enabled } });
+    },
+
+    setMetronomeVolume: (volume: number) => {
+        const v = Math.max(0, Math.min(1, volume));
+        set({ metronome: { ...get().metronome, volume: v } });
+        // Apply live to the click voice so the change is heard immediately.
+        synthEngine.setVoiceVolume('__metronome__', v);
     },
 });

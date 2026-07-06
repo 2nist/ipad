@@ -33,13 +33,30 @@ export const SongCompositionCanvas: React.FC = () => {
     const [panning, setPanning] = useState(false);
     const canvasRef = useRef<HTMLDivElement>(null);
 
-    // Auto-initialize audio
+    // Initialize audio on the FIRST user gesture, not on mount. Browsers block
+    // AudioContext.start() until a gesture, so mount-time init left the context
+    // suspended — which made the AudioWorklet loop tracks fail to construct
+    // ("no usable AudioContext") and spammed autoplay warnings. Arm one-time
+    // pointer/key listeners so init runs inside a real gesture. The "Enable
+    // Sound" banner button below is the explicit fallback.
     useEffect(() => {
-        if (!engineReady) {
+        if (engineReady) return;
+
+        let done = false;
+        const kick = () => {
+            if (done) return;
+            done = true;
             initialize().catch(() => {
-                console.log('[Canvas] Auto-init blocked by browser audio policy');
+                console.log('[Canvas] Audio init failed');
             });
-        }
+        };
+
+        window.addEventListener('pointerdown', kick, { once: true });
+        window.addEventListener('keydown', kick, { once: true });
+        return () => {
+            window.removeEventListener('pointerdown', kick);
+            window.removeEventListener('keydown', kick);
+        };
     }, [engineReady, initialize]);
 
     // Wheel zoom

@@ -115,6 +115,52 @@ export function useEngineInitialization() {
                 activeSequenceVoices.clear();
             };
 
+            // ── Metronome on the AUDIO clock, not requestAnimationFrame ──
+            // Firing clicks from the rAF onBeat callback made them land on
+            // whatever frame happened to detect the beat crossing — up to a
+            // full (dropped) frame late. That jitter is the "speeding up /
+            // slowing down". Tone.Transport.scheduleRepeat runs on the audio
+            // thread and passes an exact `time`, so clicks are sample-accurate
+            // and stay locked to the patterns (which already use Transport).
+            let metronomeEventId: number | null = null;
+
+            const startMetronome = () => {
+                if (metronomeEventId !== null) {
+                    Tone.Transport.clear(metronomeEventId);
+                    metronomeEventId = null;
+                }
+                let beat = 0;
+                metronomeEventId = Tone.Transport.scheduleRepeat((time) => {
+                    const state = useLooperStore.getState();
+                    const ts = state.song.metadata.timeSignature;
+                    const beatsPerBar = ts.numerator * (4 / ts.denominator);
+                    const isDownbeat = (beat % beatsPerBar) === 0;
+                    beat++;
+                    // Advance the beat counter unconditionally so re-enabling
+                    // mid-playback still lands the accent on the downbeat.
+                    if (!state.metronome.enabled) return;
+                    const note = isDownbeat ? metronomeOnBeat0Note : metronomeOtherBeatNote;
+                    const velocity = isDownbeat ? 0.9 : 0.5;
+                    // Pass the scheduled `time` so both attack and release are
+                    // placed precisely on the audio timeline.
+                    synthEngine.noteOn('__metronome__', note, velocity, time);
+                    synthEngine.noteOff('__metronome__', note, time + 0.05);
+                }, '4n', 0);
+            };
+
+            const stopMetronome = () => {
+                if (metronomeEventId !== null) {
+                    Tone.Transport.clear(metronomeEventId);
+                    metronomeEventId = null;
+                }
+            };
+
+            // Throttle store position writes to ~30Hz. Pushing on every rAF
+            // frame re-rendered every subscribed component 60×/sec, starving
+            // the main thread and causing the very frame drops that made the
+            // rAF-timed metronome jitter. 30Hz is plenty smooth for a playhead.
+            let lastPositionPush = 0;
+
             clock.registerSubscriber({
                 id: 'engine-sync',
                 onStart: (_pos: ClockPosition) => {
@@ -131,9 +177,13 @@ export function useEngineInitialization() {
 
                     // Schedule all stored track patterns for playback
                     scheduleTrackPatterns();
+
+                    // Start the sample-accurate metronome (audio-clock timed)
+                    startMetronome();
                 },
                 onStop: (_pos: ClockPosition) => {
                     console.log('[Clock] Transport stopped');
+                    stopMetronome();
                     stopAllSequences();
                     useLooperStore.setState({
                         transport: {
@@ -144,7 +194,12 @@ export function useEngineInitialization() {
                     });
                 },
                 onTick: (pos: ClockPosition) => {
-                    // ~40Hz — update store position so TimelineRuler + modules see it
+                    // Throttle to ~30Hz — pushing every rAF frame re-rendered
+                    // all subscribers 60×/sec and caused the frame drops that
+                    // jittered timing. See lastPositionPush note above.
+                    const now = performance.now();
+                    if (now - lastPositionPush < 33) return;
+                    lastPositionPush = now;
                     useLooperStore.setState({
                         transport: {
                             ...useLooperStore.getState().transport,
@@ -153,15 +208,8 @@ export function useEngineInitialization() {
                     });
                 },
                 onBeat: (pos: ClockPosition) => {
-                    // Play metronome click through SynthEngine
-                    const note = pos.beatInBar === 0
-                        ? metronomeOnBeat0Note
-                        : metronomeOtherBeatNote;
-                    const velocity = pos.beatInBar === 0 ? 0.9 : 0.5;
-                    synthEngine.noteOn('__metronome__', note, velocity);
-                    setTimeout(() => {
-                        synthEngine.noteOff('__metronome__', note);
-                    }, 50);
+                    // Metronome is scheduled on Tone.Transport (startMetronome),
+                    // NOT fired here — rAF beat detection was too jittery.
                     beatCount++;
 
                     // Notify modules on beat boundaries (for quantized actions)
@@ -234,7 +282,7 @@ export function useEngineInitialization() {
             synthEngine.setVoice('__metronome__', {
                 type: 'tonejsPolySynth',
                 synthConfig: { oscillatorType: 'square', attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 },
-            }, 0.3);
+            }, useLooperStore.getState().metronome.volume);
             console.log(`[Init] Created synth voices for ${synthEngine.voiceCount} tracks (including metronome)`);
 
             // Step 10: Update store with all engine references
