@@ -9,6 +9,10 @@
 
 set -eo pipefail
 
+# `clear` below needs TERM; Finder double-clicks always set it via Terminal.app,
+# but default it defensively so `set -e` can't hard-fail the whole launch on it.
+: "${TERM:=xterm-256color}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
@@ -77,7 +81,7 @@ wait_for_url() {
 }
 
 # ── Header ──────────────────────────────────────────────────────
-clear
+clear || true
 echo -e "${C_CYAN}${C_BOLD}================================================${C_RESET}"
 echo -e "${C_CYAN}${C_BOLD}  Loopy Mapper — Launch Script${C_RESET}"
 echo -e "${C_CYAN}${C_BOLD}================================================${C_RESET}"
