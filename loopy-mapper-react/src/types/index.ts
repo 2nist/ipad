@@ -607,6 +607,12 @@ export interface HarmonyRuntimeState {
     beatsInStep: number;
     beatsUntilNext: number;
     cadenceType: string;
+    /**
+     * Runtime-only (never persisted/exported). When a HarmonicExpression override
+     * is active, `progression` holds the override and this is the section-beat at
+     * which it reverts to the section's base progression. Absent = no override.
+     */
+    overrideUntilBeat?: number;
 }
 
 export interface ExpressionRuntimeState {

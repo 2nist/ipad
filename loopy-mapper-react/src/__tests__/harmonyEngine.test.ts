@@ -5,8 +5,9 @@
 import { HarmonyEngineCore, SCALE_INTERVALS, CHORD_INTERVALS, NOTE_NAMES } from '../lib/harmonyEngine';
 import { VoicingEngine } from '../lib/voicingEngine';
 import { TransportClockImpl } from '../lib/transportClock';
+import { beatsPerBar, barDurationMs } from '../lib/arrangementEngine';
 import { rhythmShapeFromTimeSig } from '../components/modules/DualPolygonSVG';
-import type { ChordQuality, TimeSignature } from '../types';
+import type { ChordQuality, ChordStep, TimeSignature } from '../types';
 
 // ─── HarmonyEngine Tests ──────────────────────────────────────────
 
@@ -160,6 +161,52 @@ describe('HarmonyEngineCore', () => {
             expect(step.degree).toBeLessThanOrEqual(7);
             expect(step.duration).toBeGreaterThan(0);
         }
+    });
+
+    test('midiToNoteName uses scientific pitch notation (C4 = 60)', () => {
+        expect(engine.midiToNoteName(60)).toBe('C4');
+        expect(engine.midiToNoteName(69)).toBe('A4');
+        expect(engine.midiToNoteName(48)).toBe('C3');
+    });
+
+    test('stepIndexAtBeat finds the active step and wraps on loop', () => {
+        const prog: ChordStep[] = [
+            { degree: 1, quality: 'maj', duration: 2 }, // bars 0–1 → beats 0–7
+            { degree: 4, quality: 'maj', duration: 2 }, // bars 2–3 → beats 8–15
+        ];
+        expect(engine.stepIndexAtBeat(prog, 0, 4)).toEqual({ index: 0, beatsIntoStep: 0, beatsUntilNext: 8 });
+        expect(engine.stepIndexAtBeat(prog, 7, 4)).toEqual({ index: 0, beatsIntoStep: 7, beatsUntilNext: 1 });
+        expect(engine.stepIndexAtBeat(prog, 8, 4)).toEqual({ index: 1, beatsIntoStep: 0, beatsUntilNext: 8 });
+        // total is 16 beats — beat 20 wraps to beat 4 → still step 0
+        expect(engine.stepIndexAtBeat(prog, 20, 4)).toEqual({ index: 0, beatsIntoStep: 4, beatsUntilNext: 4 });
+    });
+
+    test('voiceLead passes chord through unchanged when there is no previous chord', () => {
+        expect(engine.voiceLead([60, 64, 67], null)).toEqual([60, 64, 67]);
+        expect(engine.voiceLead([60, 64, 67], [])).toEqual([60, 64, 67]);
+    });
+
+    test('voiceLead shifts each voice to the octave nearest the previous chord', () => {
+        // F3-A3-C4 (53,57,60) led against C4-E4-G4 (60,64,67) rises an octave to sit close
+        expect(engine.voiceLead([53, 57, 60], [60, 64, 67])).toEqual([65, 69, 72]);
+        // A low root already near the target is pulled up rather than jumped down
+        expect(engine.voiceLead([48, 52, 55], [60, 64, 67])).toEqual([60, 64, 67]);
+    });
+});
+
+// ─── Arrangement timing helpers ───────────────────────────────────
+
+describe('arrangement timing helpers', () => {
+    test('beatsPerBar is denominator-aware', () => {
+        expect(beatsPerBar({ numerator: 4, denominator: 4 })).toBe(4);
+        expect(beatsPerBar({ numerator: 6, denominator: 8 })).toBe(3);
+        expect(beatsPerBar({ numerator: 3, denominator: 4 })).toBe(3);
+    });
+
+    test('barDurationMs scales with BPM and time signature', () => {
+        expect(barDurationMs(120, { numerator: 4, denominator: 4 })).toBe(2000);
+        expect(barDurationMs(60, { numerator: 4, denominator: 4 })).toBe(4000);
+        expect(barDurationMs(120, { numerator: 6, denominator: 8 })).toBe(1500);
     });
 });
 
