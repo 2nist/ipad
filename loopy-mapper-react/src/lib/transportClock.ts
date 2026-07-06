@@ -49,7 +49,9 @@ export class TransportClockImpl implements TransportClock {
 
     setBpm(bpm: number): void {
         this.bpm = Math.min(200, Math.max(60, bpm));
-        Tone.Transport.bpm.value = this.bpm;
+        // Tone.Transport sync happens via the onBpmChange subscriber (see
+        // useEngineInitialization) — keeping this class free of a direct Tone
+        // dependency is what makes it usable outside a browser/Tone context.
         for (const entry of this.subscribers) {
             entry.subscriber.onBpmChange?.(this.bpm);
         }

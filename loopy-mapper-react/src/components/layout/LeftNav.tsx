@@ -55,6 +55,18 @@ export const LeftNav: React.FC = () => {
     const sidebarVisible = useLooperStore(s => s.ui.sidebarVisible);
     const [expanded, setExpanded] = useState(false);
 
+    // All hooks must run unconditionally on every render — the collapsed-sidebar
+    // early return happens after every hook has already been called.
+    const sections = useLooperStore(s => s.song.arrangement);
+    const modules = useLooperStore(s => s.song.modules);
+    const setModal = useLooperStore(s => s.setModal);
+    const toggleClipBrowser = useLooperStore(s => s.toggleClipBrowser);
+    const toggleDrumBrowser = useLooperStore(s => s.toggleDrumBrowser);
+    const addSection = useLooperStore(s => s.addSection);
+    const setCanvasView = useLooperStore(s => s.setCanvasView);
+    const addModule = useLooperStore(s => s.addModule);
+    const selectSection = (id: string) => setCanvasView({ selectedSectionIds: [id] });
+
     if (!sidebarVisible) {
         return (
             <div className="flex flex-col items-center py-2 bg-zinc-900 border-r border-zinc-800 w-10">
@@ -68,17 +80,6 @@ export const LeftNav: React.FC = () => {
             </div>
         );
     }
-
-    const sections = useLooperStore(s => s.song.arrangement);
-    const modules = useLooperStore(s => s.song.modules);
-    const setModal = useLooperStore(s => s.setModal);
-    const toggleClipBrowser = useLooperStore(s => s.toggleClipBrowser);
-    const toggleDrumBrowser = useLooperStore(s => s.toggleDrumBrowser);
-    const addSection = useLooperStore(s => s.addSection);
-    const setCanvasView = useLooperStore(s => s.setCanvasView);
-    const selectSection = (id: string) => setCanvasView({ selectedSectionIds: [id] });
-
-    const addModule = useLooperStore(s => s.addModule);
 
     const navItems: NavItem[] = [
         {

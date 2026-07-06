@@ -154,35 +154,31 @@ def get_clip(clip_id: str, conn: sqlite3.Connection = Depends(get_db)):
 
 
 @router.get("/{clip_id}/stream")
-def stream_clip(clip_id: str):
+def stream_clip(clip_id: str, conn: sqlite3.Connection = Depends(get_db)):
     """Stream the raw MIDI binary for browser playback."""
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        row = conn.execute(
-            "SELECT file_path, dataset FROM midi_clips WHERE id = ?", (clip_id,)
-        ).fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Clip not found")
+    row = conn.execute(
+        "SELECT file_path, dataset FROM midi_clips WHERE id = ?", (clip_id,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Clip not found")
 
-        # Resolve full path
-        file_path = Path(DATASET_ROOT) / row["dataset"] / row["file_path"]
+    # Resolve full path
+    file_path = Path(DATASET_ROOT) / row["dataset"] / row["file_path"]
+    if not file_path.exists():
+        # Try alternative: maybe the path is absolute or relative differently
+        file_path = Path(DATASET_ROOT) / row["file_path"]
         if not file_path.exists():
-            # Try alternative: maybe the path is absolute or relative differently
-            file_path = Path(DATASET_ROOT) / row["file_path"]
-            if not file_path.exists():
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"MIDI file not found on disk: {file_path}",
-                )
+            raise HTTPException(
+                status_code=404,
+                detail=f"MIDI file not found on disk: {file_path}",
+            )
 
-        midi_bytes = file_path.read_bytes()
-        return Response(
-            content=midi_bytes,
-            media_type="audio/midi",
-            headers={
-                "Content-Disposition": f'inline; filename="{file_path.name}"',
-                "Content-Length": str(len(midi_bytes)),
-            },
-        )
-    finally:
-        conn.close()
+    midi_bytes = file_path.read_bytes()
+    return Response(
+        content=midi_bytes,
+        media_type="audio/midi",
+        headers={
+            "Content-Disposition": f'inline; filename="{file_path.name}"',
+            "Content-Length": str(len(midi_bytes)),
+        },
+    )

@@ -11,6 +11,8 @@ import type {
 } from '../types';
 import { getPresetById, MODULE_PRESETS, nextPatternName, resetPatternNames, RHYTHM_MODE_COLORS } from './presets';
 import { synthEngine } from '../lib/synthEngine';
+import { DEFAULT_UI } from './uiSlice';
+import { DEFAULT_TRANSPORT } from './transportSlice';
 
 const DEFAULT_CANVAS_VIEW = {
     viewLevel: "sectionsOnly" as const,
@@ -377,49 +379,9 @@ export const createSongSlice: StateCreator<
         }
         set({
             song,
-            transport: {
-                isPlaying: false,
-                isRecording: false,
-                position: {
-                    absoluteBeat: 0, barInSection: 0, beatInBar: 0, tickInBeat: 0,
-                    sectionId: "", beatInSection: 0, elapsedBeatsInSection: 0, remainingBeatsInSection: 0,
-                },
-                activeSectionId: null,
-                activeSectionIndex: 0,
-            },
+            transport: { ...DEFAULT_TRANSPORT },
             moduleStates: {},
-            ui: {
-                activeModal: { type: "none" } as const,
-                activeEditorPanel: { type: "none" } as const,
-                editingModuleId: null,
-                editingTrackIndex: null,
-                clipBrowserOpen: false,
-                sidebarVisible: true,
-                rightPanelVisible: false,
-                lyrics: "",
-                lyricsSectionId: null,
-                canvasView: {
-                    viewLevel: "sectionsOnly" as const,
-                    selectedSectionIds: [],
-                    selectedModuleIds: [],
-                    zoomLevel: 50,
-                    scrollPosition: 0,
-                    chordEditorOpen: false,
-                    chordEditorBarIndex: null,
-                    isPlaying: false,
-                    playheadPosition: 0,
-                },
-                midiLearnTarget: null,
-                midiActivity: false,
-                midiDeviceConnected: false,
-                audioInitialized: false,
-                canvasLockSize: false,
-                canvasLockPosition: false,
-                assigningModuleId: null,
-                midiEditorOpen: false,
-                midiEditorModuleId: null,
-                midiEditorTrackIndex: null,
-            },
+            ui: { ...DEFAULT_UI, rightPanelVisible: false },
         });
     },
 
@@ -428,16 +390,7 @@ export const createSongSlice: StateCreator<
     loadSong: (song: SongObject) => {
         set({
             song,
-            transport: {
-                isPlaying: false,
-                isRecording: false,
-                position: {
-                    absoluteBeat: 0, barInSection: 0, beatInBar: 0, tickInBeat: 0,
-                    sectionId: "", beatInSection: 0, elapsedBeatsInSection: 0, remainingBeatsInSection: 0,
-                },
-                activeSectionId: null,
-                activeSectionIndex: 0,
-            },
+            transport: { ...DEFAULT_TRANSPORT },
         });
     },
 

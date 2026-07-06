@@ -40,8 +40,9 @@ class AudioPreviewEngine {
         Tone.Transport.bpm.value = tempo;
 
         // Schedule notes
-        const now = Tone.now();
-        const part = new Tone.Part((time, note: { pitch: number; duration: number; velocity: number }) => {
+        const events: Array<[number, { pitch: number; time: number; duration: number; velocity: number }]> =
+            notes.map((n) => [n.time, n]);
+        const part = new Tone.Part((time, note) => {
             if (this.synth) {
                 this.synth.triggerAttackRelease(
                     Tone.Frequency(note.pitch, "midi").toNote(),
@@ -50,7 +51,7 @@ class AudioPreviewEngine {
                     note.velocity
                 );
             }
-        }, notes.map((n) => [n.time, n]));
+        }, events);
 
         part.loop = false;
         part.start(0);

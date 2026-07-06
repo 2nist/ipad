@@ -45,14 +45,14 @@ describe('HarmonyEngineCore', () => {
     test('resolveChord returns correct for D minor 7', () => {
         const chord = engine.resolveChord('D', 'minor', 1, 'min7', 3);
         expect(chord.rootNote).toBe(2); // D
-        expect(chord.chordTones).toEqual([38, 41, 45, 48]); // D3, F3, A3, C4
+        expect(chord.chordTones).toEqual([50, 53, 57, 60]); // D3, F3, A3, C4
         expect(chord.noteNames).toEqual(['D3', 'F3', 'A3', 'C4']);
     });
 
     test('resolveChord returns correct for G dominant 7', () => {
         const chord = engine.resolveChord('C', 'major', 5, 'dom7', 3);
         expect(chord.rootNote).toBe(7); // G
-        expect(chord.chordTones).toEqual([43, 47, 50, 53]); // G3, B3, D4, F4
+        expect(chord.chordTones).toEqual([55, 59, 62, 65]); // G3, B3, D4, F4
     });
 
     test('stepProgression advances correctly', () => {

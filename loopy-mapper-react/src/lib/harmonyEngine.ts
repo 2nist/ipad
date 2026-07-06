@@ -70,7 +70,9 @@ export class HarmonyEngineCore {
     resolveChord(key: string, scale: string, degree: number, quality: ChordQuality, octave: number = 3): ResolvedChord {
         const rootNote = this.degreeToRootNote(key, scale, degree);
         const intervals = CHORD_INTERVALS[quality] || CHORD_INTERVALS.maj;
-        const chordTones = intervals.map(interval => rootNote + interval + octave * 12);
+        // Scientific pitch notation (C4 = MIDI 60), matching SynthEngine.midiToNote
+        // and Tone.js's own note naming — "octave 3" means (octave+1)*12.
+        const chordTones = intervals.map(interval => rootNote + interval + (octave + 1) * 12);
         const noteNames = intervals.map(interval => {
             const noteIndex = (rootNote + interval) % 12;
             return `${NOTE_NAMES[noteIndex]}${octave + Math.floor((rootNote + interval) / 12)}`;

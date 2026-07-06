@@ -19,7 +19,7 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/drums", tags=["drums"])
 
 # Allow override via env var for deployment
-DRUMS_ROOT = os.environ.get("DRUMS_ROOT", "/Users/Matthew/Drums")
+DRUMS_ROOT = os.environ.get("DRUMS_ROOT", "./drums")
 
 
 class KitEntry(BaseModel):
@@ -32,6 +32,19 @@ class SampleEntry(BaseModel):
     filename: str
     url: str
     size: int
+
+
+def _resolve_within_root(root: Path, *parts: str) -> Path:
+    """Resolve `root/*parts`, rejecting any path that escapes `root`.
+
+    kit_name/sample_name come straight from the URL, so without this a
+    request like `kit_name=..` could walk outside DRUMS_ROOT.
+    """
+    resolved_root = root.resolve()
+    candidate = root.joinpath(*parts).resolve()
+    if not candidate.is_relative_to(resolved_root):
+        raise HTTPException(status_code=404, detail="Not found")
+    return candidate
 
 
 # ── Endpoints ──
@@ -62,7 +75,7 @@ def list_kits():
 def list_samples(kit_name: str):
     """List all samples in a drum kit."""
     root = Path(DRUMS_ROOT)
-    kit_dir = root / kit_name
+    kit_dir = _resolve_within_root(root, kit_name)
 
     if not kit_dir.exists() or not kit_dir.is_dir():
         raise HTTPException(status_code=404, detail=f"Kit not found: {kit_name}")
@@ -83,7 +96,7 @@ def list_samples(kit_name: str):
 def stream_sample(kit_name: str, sample_name: str):
     """Stream a drum sample as WAV audio."""
     root = Path(DRUMS_ROOT)
-    file_path = root / kit_name / sample_name
+    file_path = _resolve_within_root(root, kit_name, sample_name)
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Sample not found")
