@@ -134,7 +134,7 @@ export const LeftNav: React.FC = () => {
             id: 'settings',
             icon: <Icons.Settings />,
             label: 'Settings',
-            action: () => setModal({ type: 'about' }),
+            action: () => setModal({ type: 'settings' }),
         },
     ];
 

@@ -6,6 +6,7 @@ import React from 'react';
 import { useLooperStore } from '../../store/store';
 import { MODULE_PRESETS } from '../../store/presets';
 import type { ModulePreset } from '../../types';
+import { SettingsModal } from './SettingsModal';
 
 export const ModalManager: React.FC = () => {
     const activeModal = useLooperStore(s => s.ui.activeModal);
@@ -24,6 +25,7 @@ export const ModalManager: React.FC = () => {
         >
             <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto mx-4">
                 {activeModal.type === 'addModule' && <AddModuleModal />}
+                {activeModal.type === 'settings' && <SettingsModal />}
                 {activeModal.type === 'aiStructure' && <AiStructureModal />}
                 {activeModal.type === 'aiArrange' && <AiArrangeModal />}
                 {(activeModal.type === 'moduleEditor' || activeModal.type === 'sectionEditor') && (

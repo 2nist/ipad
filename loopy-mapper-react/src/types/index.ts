@@ -631,6 +631,7 @@ export type ModalDialog =
     | { type: "aiStructure" }
     | { type: "aiChords"; sectionId: string }
     | { type: "aiArrange" }
+    | { type: "settings" }
     | { type: "about" };
 
 export type EditorPanel =

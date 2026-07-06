@@ -52,3 +52,6 @@ midi_library.db
 
 # ── Claude Code per-machine settings (local, not shared) ──
 .claude/settings.local.json
+
+# Backend drums directory (per-machine, set via app Settings)
+loopy-mapper-react/backend/drums_config.json
