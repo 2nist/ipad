@@ -239,6 +239,8 @@ export function createTransportClock(audioContext: AudioContext, bpm: number = 1
         scheduleAhead: 0.1,
         schedulerInterval: 0.025,
     });
+    // Previously `bpm` was accepted but never applied, so every clock silently
+    // booted at the class default (120) regardless of the song's actual tempo.
     clock.setBpm(bpm);
     return clock;
 }

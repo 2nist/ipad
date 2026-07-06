@@ -9,7 +9,8 @@ import type {
     ModuleTrackConfig, SoundSource, SoundEngine, ChordStep, SectionMarker, TransitionMode,
     LooperStore, LooperStoreActions,
 } from '../types';
-import { getPresetById } from './presets';
+import { getPresetById, MODULE_PRESETS, nextPatternName, resetPatternNames, RHYTHM_MODE_COLORS } from './presets';
+import { synthEngine } from '../lib/synthEngine';
 
 const DEFAULT_CANVAS_VIEW = {
     viewLevel: "sectionsOnly" as const,
@@ -66,12 +67,42 @@ export interface SongSlice {
     deleteUserPreset: LooperStoreActions['deleteUserPreset'];
 }
 
-export const createDefaultSong = (): SongObject => ({
-    metadata: { ...DEFAULT_SONG_METADATA },
-    modules: [],
-    arrangement: [],
-    midiBindings: [],
-});
+export const createDefaultSong = (): SongObject => {
+    const arrPreset = MODULE_PRESETS.find(p => p.id === 'preset-arrangement');
+    const arrModule: ModuleCard = arrPreset
+        ? { ...JSON.parse(JSON.stringify(arrPreset.defaults)), id: uuid() }
+        : {
+            id: uuid(),
+            type: 'arrangement',
+            label: 'Main Conductor',
+            size: 'lg',
+            colorAccent: '#22c55e',
+            bus: 'green',
+            quantization: '1_bar',
+            quantizationEnabled: true,
+            baseMidiNote: 60,
+            isPreset: true,
+            presetId: 'preset-arrangement',
+            tracks: [],
+        };
+
+    const defaultSectionId = uuid();
+    const defaultSection: SongSection = {
+        id: defaultSectionId,
+        name: 'Intro',
+        bars: 8,
+        transition: 'nextBar',
+        chordProgression: [],
+        activeModules: [],
+    };
+
+    return {
+        metadata: { ...DEFAULT_SONG_METADATA },
+        modules: [arrModule],
+        arrangement: [defaultSection],
+        midiBindings: [],
+    };
+};
 
 export const createSongSlice: StateCreator<
     LooperStore,
@@ -83,8 +114,20 @@ export const createSongSlice: StateCreator<
 
     addModule: (preset: ModulePreset) => {
         const id = uuid();
+        const defaults = JSON.parse(JSON.stringify(preset.defaults)) as ModuleCard;
+
+        // Auto-assign pattern name and rhythm mode for rhythm modules
+        if (preset.moduleType === 'rhythm') {
+            const patternName = nextPatternName();
+            const rhythmMode = preset.defaults.rhythmMode ?? 'loop';
+            defaults.patternName = patternName;
+            defaults.rhythmMode = rhythmMode;
+            defaults.colorAccent = RHYTHM_MODE_COLORS[rhythmMode];
+            defaults.label = `${patternName} ${rhythmMode.charAt(0).toUpperCase() + rhythmMode.slice(1)}`;
+        }
+
         const newModule: ModuleCard = {
-            ...JSON.parse(JSON.stringify(preset.defaults)),
+            ...defaults,
             id,
         };
         set(state => ({
@@ -93,6 +136,19 @@ export const createSongSlice: StateCreator<
                 modules: [...state.song.modules, newModule],
             },
         }));
+
+        // If SynthEngine is already initialized, create voices for the new module's MIDI tracks
+        if (synthEngine.isInitialized && newModule.type !== 'arrangement') {
+            for (const track of newModule.tracks) {
+                const soundSource = track.soundSource;
+                if (soundSource.type === 'midiClip' || soundSource.type === 'liveMidi') {
+                    const voiceId = `${id}:${track.index}`;
+                    synthEngine.setVoice(voiceId, soundSource.soundEngine, track.volume);
+                }
+            }
+            console.log(`[SongSlice] Created ${synthEngine.voiceCount} synth voices after adding module ${newModule.label}`);
+        }
+
         return id;
     },
 
@@ -315,6 +371,7 @@ export const createSongSlice: StateCreator<
 
     newSong: (metadata: SongMetadata) => {
         const song = createDefaultSong();
+        resetPatternNames();
         if (metadata) {
             song.metadata = { ...song.metadata, ...metadata };
         }
@@ -356,6 +413,12 @@ export const createSongSlice: StateCreator<
                 midiActivity: false,
                 midiDeviceConnected: false,
                 audioInitialized: false,
+                canvasLockSize: false,
+                canvasLockPosition: false,
+                assigningModuleId: null,
+                midiEditorOpen: false,
+                midiEditorModuleId: null,
+                midiEditorTrackIndex: null,
             },
         });
     },

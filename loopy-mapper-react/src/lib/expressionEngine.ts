@@ -122,13 +122,21 @@ export class ExpressionEngine {
     }
 }
 
-// Singleton
-export const expressionEngine = new ExpressionEngine(
-    () => { throw new Error('ExpressionEngine not initialized: store not set'); }
-);
+// Singleton — initialized lazily when store is available
+let _instance: ExpressionEngine | null = null;
 
 export function createExpressionEngine(
     getStore: () => LooperStoreType,
 ): ExpressionEngine {
-    return new ExpressionEngine(getStore);
+    _instance = new ExpressionEngine(getStore);
+    return _instance;
+}
+
+/** Get or lazily create the expression engine (uses a default noop store until initialized). */
+export function getExpressionEngine(): ExpressionEngine {
+    if (!_instance) {
+        // Default noop until createExpressionEngine is called during init
+        _instance = new ExpressionEngine(() => ({} as LooperStoreType));
+    }
+    return _instance;
 }

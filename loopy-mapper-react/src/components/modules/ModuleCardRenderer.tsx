@@ -2,10 +2,13 @@
 // MODULE CARD RENDERER — Dispatches to correct card type
 // ═══════════════════════════════════════════════════════════════════
 
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useLooperStore } from '../../store/store';
 import type { ModuleCard } from '../../types';
 import { DualPolygonSVG, rhythmShapeFromTimeSig } from './DualPolygonSVG';
+import { synthEngine } from '../../lib/synthEngine';
+import { looperEngine } from '../../lib/audio-worklet';
+import { DrumModuleCard } from './DrumModuleCard';
 
 const BUS_COLORS: Record<string, string> = {
     red: '#ef4444',
@@ -55,21 +58,124 @@ const ModuleHeader: React.FC<{ module: ModuleCard }> = ({ module }) => {
 };
 
 const TrackRow: React.FC<{ module: ModuleCard }> = ({ module }) => {
+    const setTrackState = useLooperStore(s => s.setTrackState);
+    const moduleState = useLooperStore(s => s.moduleStates[module.id]);
+
+    const getTrackState = (trackIndex: number) =>
+        moduleState?.tracks.find(t => t.trackIndex === trackIndex)?.state ?? 'empty';
+
+    const handlePlayTest = useCallback((trackIndex: number) => {
+        const voiceId = `${module.id}:${trackIndex}`;
+        const track = module.tracks[trackIndex];
+        if (!track) return;
+        const note = track.midiNote;
+        const source = track.soundSource;
+
+        // Only MIDI-based sources can trigger synth notes
+        if (source.type === 'audioInput') return;
+
+        // Ensure synth voice exists for MIDI sources
+        synthEngine.setVoice(voiceId, source.soundEngine, track.volume);
+
+        // Play a short test note (300ms)
+        synthEngine.noteOn(voiceId, note, 0.8);
+        setTimeout(() => {
+            synthEngine.noteOff(voiceId, note);
+        }, 300);
+    }, [module.id, module.tracks]);
+
+    const handleToggleMute = useCallback((trackIndex: number) => {
+        const currentState = getTrackState(trackIndex);
+        const newState = currentState === 'muted' ? 'empty' : 'muted';
+        setTrackState(module.id, trackIndex, { state: newState });
+
+        const track = module.tracks[trackIndex];
+        if (track && track.soundSource.type === 'audioInput' && newState !== 'muted') {
+            looperEngine.toggleRecord(trackIndex);
+        }
+    }, [module.id, setTrackState, getTrackState, module.tracks]);
+
+    const handleToggleSolo = useCallback((trackIndex: number) => {
+        const currentState = getTrackState(trackIndex);
+        const newState = currentState === 'soloed' ? 'empty' : 'soloed';
+        setTrackState(module.id, trackIndex, { state: newState });
+    }, [module.id, setTrackState, getTrackState]);
+
+    const handleVolumeChange = useCallback((trackIndex: number, volume: number) => {
+        const voiceId = `${module.id}:${trackIndex}`;
+        synthEngine.setVoiceVolume(voiceId, volume);
+    }, [module.id]);
+
     return (
-        <div className="px-3 py-1">
-            {module.tracks.map(track => (
-                <div key={track.index} className="flex items-center gap-2 text-[10px] text-zinc-400 py-0.5">
-                    <span className="w-12 truncate">{track.label}</span>
-                    <span className="text-zinc-600">·</span>
-                    <span>Note {track.midiNote}</span>
-                    <span className="text-zinc-600">·</span>
-                    <span>Pan {Math.round(track.pan * 100)}</span>
-                    <span className="text-zinc-600">·</span>
-                    <span className={track.soundSource.type === 'midiClip' && track.soundSource.clipId ? 'text-green-400' : 'text-zinc-600'}>
-                        {track.soundSource.type === 'audioInput' ? '🎤' : track.soundSource.type === 'midiClip' ? (track.soundSource.clipId ? '🎹' : '▢') : '🎛'}
-                    </span>
-                </div>
-            ))}
+        <div className="px-2 py-1 space-y-0.5">
+            {module.tracks.map(track => {
+                const trackState = getTrackState(track.index);
+                const isMuted = trackState === 'muted';
+                const isSoloed = trackState === 'soloed';
+
+                return (
+                    <div key={track.index}
+                        className="flex items-center gap-1.5 text-[10px] text-zinc-400 py-1 px-1 rounded hover:bg-zinc-800/50"
+                    >
+                        {/* Track label */}
+                        <span className={`w-12 truncate font-medium ${isMuted ? 'text-zinc-600 line-through' : 'text-zinc-300'}`}>
+                            {track.label}
+                        </span>
+
+                        {/* Sound source icon */}
+                        <span className="w-4 text-center flex-shrink-0" title={track.soundSource.type}>
+                            {track.soundSource.type === 'audioInput' ? '🎤' : track.soundSource.type === 'midiClip' ? (track.soundSource.clipId ? '🎹' : '▢') : '🎛'}
+                        </span>
+
+                        {/* Note trigger button — ALWAYS visible */}
+                        <button
+                            onClick={() => handlePlayTest(track.index)}
+                            className="px-1.5 py-0.5 rounded bg-blue-700 hover:bg-blue-500 text-[10px] text-white transition-colors flex-shrink-0"
+                            title={`Test note ${track.midiNote} — click to hear`}
+                        >
+                            ▶
+                        </button>
+
+                        {/* MIDI note number */}
+                        <span className="text-zinc-600 font-mono w-4 text-center flex-shrink-0">{track.midiNote}</span>
+
+                        {/* Mute toggle */}
+                        <button
+                            onClick={() => handleToggleMute(track.index)}
+                            className={`px-1 rounded text-[9px] font-bold transition-colors flex-shrink-0 ${isMuted ? 'bg-red-900/60 text-red-400' : 'bg-zinc-800 text-zinc-500 hover:text-yellow-400'}`}
+                            title={isMuted ? 'Unmute' : 'Mute'}
+                        >
+                            M
+                        </button>
+
+                        {/* Solo toggle */}
+                        <button
+                            onClick={() => handleToggleSolo(track.index)}
+                            className={`px-1 rounded text-[9px] font-bold transition-colors flex-shrink-0 ${isSoloed ? 'bg-yellow-900/60 text-yellow-400' : 'bg-zinc-800 text-zinc-500 hover:text-yellow-400'}`}
+                            title={isSoloed ? 'Unsolo' : 'Solo'}
+                        >
+                            S
+                        </button>
+
+                        {/* Volume slider — always visible */}
+                        <div className="flex items-center gap-1 ml-auto min-w-0">
+                            <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                value={Math.round(track.volume * 100)}
+                                onChange={e => {
+                                    const vol = Number(e.target.value) / 100;
+                                    handleVolumeChange(track.index, vol);
+                                }}
+                                className="w-10 h-1 cursor-pointer accent-blue-500"
+                                title="Volume"
+                            />
+                            <span className="text-zinc-600 w-6 text-right flex-shrink-0">{Math.round(track.volume * 100)}%</span>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 };
@@ -128,7 +234,6 @@ export const HarmonicModuleCard: React.FC<{ module: ModuleCard }> = ({ module })
             <ModuleHeader module={module} />
             <div className="px-3 py-2">
                 <div className="flex items-center gap-3">
-                    {/* Simplified hexagon representation */}
                     <div className="w-14 h-14 rounded-full border-2 flex items-center justify-center text-xs font-bold"
                         style={{ borderColor: BUS_COLORS[module.bus], color: BUS_COLORS[module.bus] }}>
                         {activeChord ? `${activeChord.degree}${activeChord.quality === 'maj' ? '' : activeChord.quality === 'min' ? 'm' : activeChord.quality}` : 'I'}
@@ -193,7 +298,7 @@ export const ArrangementModuleCard: React.FC<{ module: ModuleCard }> = ({ module
 export const ModuleCardRenderer: React.FC<{ module: ModuleCard }> = ({ module }) => {
     switch (module.type) {
         case 'rhythm':
-            return <RhythmModuleCard module={module} />;
+            return <DrumModuleCard module={module} />;
         case 'harmonic':
             return <HarmonicModuleCard module={module} />;
         case 'arrangement':

@@ -73,9 +73,12 @@ export const LeftNav: React.FC = () => {
     const modules = useLooperStore(s => s.song.modules);
     const setModal = useLooperStore(s => s.setModal);
     const toggleClipBrowser = useLooperStore(s => s.toggleClipBrowser);
+    const toggleDrumBrowser = useLooperStore(s => s.toggleDrumBrowser);
     const addSection = useLooperStore(s => s.addSection);
     const setCanvasView = useLooperStore(s => s.setCanvasView);
     const selectSection = (id: string) => setCanvasView({ selectedSectionIds: [id] });
+
+    const addModule = useLooperStore(s => s.addModule);
 
     const navItems: NavItem[] = [
         {
@@ -83,6 +86,24 @@ export const LeftNav: React.FC = () => {
             icon: <Icons.Plus />,
             label: 'Add Module',
             action: () => setModal({ type: 'addModule' }),
+        },
+        {
+            id: 'quick-rhythm',
+            icon: <span className="text-red-400">🔴</span>,
+            label: 'Rhythm Module',
+            action: () => {
+                const preset = MODULE_PRESETS.find(p => p.id === 'preset-rhythm-4tk');
+                if (preset) addModule(preset);
+            },
+        },
+        {
+            id: 'quick-harmonic',
+            icon: <span className="text-blue-400">🔵</span>,
+            label: 'Pad Module',
+            action: () => {
+                const preset = MODULE_PRESETS.find(p => p.id === 'preset-harmonic-1tk');
+                if (preset) addModule(preset);
+            },
         },
         {
             id: 'sections',
@@ -95,6 +116,12 @@ export const LeftNav: React.FC = () => {
             icon: <Icons.Music />,
             label: 'Modules',
             action: () => setCanvasView({ viewLevel: 'sectionsWithModules' }),
+        },
+        {
+            id: 'drums',
+            icon: <span className="text-orange-400">🥁</span>,
+            label: 'Drum Kits',
+            action: () => toggleDrumBrowser(),
         },
         {
             id: 'clips',

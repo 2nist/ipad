@@ -64,8 +64,13 @@ CREATE INDEX IF NOT EXISTS idx_midi_clips_density ON midi_clips(note_density);
 
 def extract_features(filepath: str) -> dict:
     """Extract musical features from a MIDI file using pretty_midi."""
+    # Always compute file-based metadata (no MIDI parsing needed)
+    with open(filepath, "rb") as f:
+        data = f.read()
+
     result = {
-        "id": "",
+        "id": hashlib.sha256(data).hexdigest()[:16],
+        "file_size": len(data),
         "bar_length": 0,
         "note_density": 0.0,
         "detected_key": "C",
@@ -83,15 +88,9 @@ def extract_features(filepath: str) -> dict:
         return result
 
     try:
-        pm = pretty_midi.PrettyMidi(filepath)
+        pm = pretty_midi.PrettyMIDI(filepath)
     except Exception:
         return result
-
-    # File hash as stable ID
-    with open(filepath, "rb") as f:
-        data = f.read()
-    result["id"] = hashlib.sha256(data).hexdigest()[:16]
-    result["file_size"] = len(data)
 
     # Time signature
     if pm.time_signature_changes:
@@ -137,13 +136,21 @@ def extract_features(filepath: str) -> dict:
             has_dom7 = pc_counts.get((root + 10) % 12, 0) > 0
             result["detected_scale"] = "dominant" if has_dom7 else "major"
 
-    # Note density & timing analysis
-    all_notes = []
+    # Note density & timing analysis — include ALL notes (drums + melodic)
+    all_melodic_notes = []
+    all_drum_notes = []
     for inst in pm.instruments:
-        if not inst.is_drum:
-            all_notes.extend(inst.notes)
+        if inst.is_drum:
+            all_drum_notes.extend(inst.notes)
+        else:
+            all_melodic_notes.extend(inst.notes)
 
+    all_notes = all_melodic_notes + all_drum_notes
     result["note_count"] = len(all_notes)
+
+    # If only drum notes, mark key as percussion
+    if all_drum_notes and not all_melodic_notes:
+        result["detected_key"] = "percussion"
 
     if all_notes:
         # Duration in beats (approximate)
@@ -269,21 +276,28 @@ def main():
 
     conn = sqlite3.connect(db_path)
 
-    # Scan e-gmd
-    e_gmd_dir = dataset_root / "e-gmd"
-    if e_gmd_dir.exists():
-        print(f"\nScanning e-gmd: {e_gmd_dir}")
-        scan_directory(str(e_gmd_dir), "e-gmd", conn)
-    else:
-        print(f"\n[SKIP] e-gmd not found at {e_gmd_dir}")
+    # Scan known datasets or all directories in dataset_root
+    known_datasets = ["e-gmd", "tegridy", "downloads"]
+    scanned_any = False
 
-    # Scan Tegridy
-    tegridy_dir = dataset_root / "tegridy"
-    if tegridy_dir.exists():
-        print(f"\nScanning Tegridy: {tegridy_dir}")
-        scan_directory(str(tegridy_dir), "tegridy", conn)
-    else:
-        print(f"\n[SKIP] Tegridy not found at {tegridy_dir}")
+    for ds_name in known_datasets:
+        ds_dir = dataset_root / ds_name
+        if ds_dir.exists():
+            print(f"\nScanning {ds_name}: {ds_dir}")
+            scan_directory(str(ds_dir), ds_name, conn)
+            scanned_any = True
+
+    # Also scan any other dirs in dataset_root not already scanned
+    if dataset_root.exists():
+        for child in dataset_root.iterdir():
+            if child.is_dir() and child.name not in known_datasets:
+                print(f"\nScanning {child.name}: {child}")
+                scan_directory(str(child), child.name, conn)
+                scanned_any = True
+
+    if not scanned_any:
+        print(f"\n[WARN] No dataset directories found in {dataset_root}")
+        print("Place .mid files in subdirectories like datasets/e-gmd/ or datasets/downloads/")
 
     conn.close()
 

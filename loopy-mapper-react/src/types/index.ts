@@ -15,6 +15,8 @@ export type QuantizationPreset = "1_16" | "1_8" | "1_4" | "1_bar" | "2_bar" | "4
 export type BusColor = "red" | "blue" | "green";
 export type TrackState = "empty" | "recording" | "playing" | "muted" | "soloed";
 
+export type RhythmMode = "loop" | "fill" | "clip";
+
 export interface ModuleCard {
     id: string;
     type: ModuleType;
@@ -30,6 +32,20 @@ export interface ModuleCard {
     presetId?: string;
     readonly shapeConfig?: RhythmShapeConfig;
     expression?: ModuleExpression;
+    /** Rhythm modules: loop mode (continuously loop), fill (triggered variation), clip (play once) */
+    rhythmMode?: RhythmMode;
+    /** Auto-assigned pattern name from mineral list (e.g., "Quartz", "Onyx"). Used for display labels. */
+    patternName?: string;
+    /** Optional timeline positioning. If set, module only activates when playhead is within range. */
+    position?: {
+        startBeat: number;
+        lengthBeats: number;
+    };
+    /** Optional canvas position for infinite canvas. x/y in logical pixels. */
+    canvasPosition?: {
+        x: number;
+        y: number;
+    };
 }
 
 export interface ModuleTrackConfig {
@@ -40,9 +56,13 @@ export interface ModuleTrackConfig {
     volume: number;
     actions: ModuleActionRef[];
     loopBehavior: LoopBehavior;
+    loopCount?: number;
     volumeRampMs: number;
     muteGroup?: string;
     soundSource: SoundSource;
+    /** Sample-specific: start offset in ms, duration in ms */
+    sampleStart?: number;
+    sampleDuration?: number;
 }
 
 export interface ModuleActionRef {
@@ -65,7 +85,7 @@ export interface ModulePreset {
 
 // ─── Sound Source Types ────────────────────────────────────────────
 
-export type SoundSourceType = "audioInput" | "midiClip" | "liveMidi";
+export type SoundSourceType = "audioInput" | "midiClip" | "liveMidi" | "sample";
 
 export interface AudioInputSource {
     type: "audioInput";
@@ -92,7 +112,19 @@ export interface LiveMidiSource {
     recordedSequence?: MidiEvent[];
 }
 
-export type SoundSource = AudioInputSource | MidiClipSource | LiveMidiSource;
+export interface SampleSource {
+    type: "sample";
+    sampleId: string | null;
+    sampleUrl?: string;
+    sampleName?: string;
+    sampleDurationMs?: number;
+    soundEngine: SamplerEngine;
+    transpose: number;
+    velocityScale: number;
+    triggerMode: "oneShot" | "gate";
+}
+
+export type SoundSource = AudioInputSource | MidiClipSource | LiveMidiSource | SampleSource;
 
 export interface MidiEvent {
     deltaTime: number;
@@ -139,12 +171,43 @@ export interface SongObject {
     midiBindings: MidiBinding[];
 }
 
+/** External Song Object format for import/export — aligns with schemas/song-object.schema.json */
+export interface SongObjectExport {
+    schemaVersion: string;
+    metadata: SongMetadata;
+    structure: SongSection[];
+    modules: ModuleCard[];
+    midiBindings?: MidiBinding[];
+    provenance?: SongProvenance;
+}
+
+export interface SongProvenance {
+    sourceUrl?: string;
+    sourceName?: string;
+    confidence?: number;
+    generatedBy?: string;
+    generatedAt?: string;
+    references?: ProvenanceReference[];
+}
+
+export interface ProvenanceReference {
+    type: "lrclib" | "spotify" | "musicbrainz" | "hooktheory" | "manual" | "aiInference";
+    url?: string;
+    id?: string;
+    retrievedAt?: string;
+}
+
 export interface SongMetadata {
     title: string;
+    artist?: string;
     bpm: number;
     timeSignature: TimeSignature;
     key: string;
     scale: string;
+    genre?: string;
+    tags?: string[];
+    duration?: number;
+    difficulty?: number;
 }
 
 export interface TimeSignature {
@@ -157,6 +220,12 @@ export type TimeSignatureDenominator = 2 | 4 | 8 | 16;
 
 export type TransitionMode = "instant" | "nextBar" | "fade";
 
+export interface LyricLine {
+    text: string;
+    timestampMs?: number;
+    durationMs?: number;
+}
+
 export interface SongSection {
     id: string;
     name: string;
@@ -165,6 +234,11 @@ export interface SongSection {
     chordProgression: ChordStep[];
     activeModules: string[];
     markers?: SectionMarker[];
+    lyrics?: LyricLine[];
+    sourceTimestamps?: {
+        startMs: number;
+        endMs: number;
+    };
 }
 
 export interface SectionMarker {
@@ -617,6 +691,13 @@ export interface LooperStore {
         midiActivity: boolean;
         midiDeviceConnected: boolean;
         audioInitialized: boolean;
+        canvasLockSize: boolean;
+        canvasLockPosition: boolean;
+        assigningModuleId: string | null;
+        midiEditorOpen: boolean;
+        midiEditorModuleId: string | null;
+        midiEditorTrackIndex: number | null;
+        drumBrowserOpen: boolean;
     };
     moduleStates: Record<string, ModuleRuntimeState>;
     clipBrowser: {

@@ -58,7 +58,7 @@ export const createClipBrowserSlice: StateCreator<
         }));
     },
 
-    searchClips: async () => {
+    searchClips: async (pageOffset?: number) => {
         const { filters } = get().clipBrowser;
         set(state => ({
             clipBrowser: { ...state.clipBrowser, loading: true, error: null },
@@ -71,6 +71,10 @@ export const createClipBrowserSlice: StateCreator<
             if (filters.dataset) apiFilters.dataset = filters.dataset;
             if (filters.minDensity !== null) apiFilters.min_density = filters.minDensity;
             if (filters.maxDensity !== null) apiFilters.max_density = filters.maxDensity;
+            if (filters.minBars !== null) apiFilters.min_bars = filters.minBars;
+            if (filters.maxBars !== null) apiFilters.max_bars = filters.maxBars;
+            apiFilters.limit = 24;
+            apiFilters.offset = pageOffset ?? 0;
 
             const result = await searchClips(apiFilters as any);
             set(state => ({

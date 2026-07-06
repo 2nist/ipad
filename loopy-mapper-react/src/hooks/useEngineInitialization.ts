@@ -1,13 +1,21 @@
 // ═══════════════════════════════════════════════════════════════════
-// useEngineInitialization — Initializes audio/MIDI on user gesture
-// Wires TransportClock → LooperEngine → SynthEngine → MidiRouter
+// useEngineInitialization — Single entry point for audio/MIDI init
+// 1. Calls store.initializeEngines() (MIDI access request)
+// 2. Starts Tone.js → gets shared AudioContext
+// 3. Initializes LooperEngine + SynthEngine
+// 4. Creates TransportClock
+// 5. Wires ArrangementEngine to clock
+// 6. Sets up MidiRouter
+// 7. Creates synth voices for all existing module tracks
+// 8. Stores engine references back into the store
 // ═══════════════════════════════════════════════════════════════════
 
 import { useCallback } from 'react';
+import * as Tone from 'tone';
 import { useLooperStore } from '../store/store';
 import { createTransportClock, TransportClockImpl } from '../lib/transportClock';
 import { createArrangementEngine, ArrangementEngine } from '../lib/arrangementEngine';
-import { ExpressionEngine } from '../lib/expressionEngine';
+import { ExpressionEngine, createExpressionEngine } from '../lib/expressionEngine';
 import { synthEngine } from '../lib/synthEngine';
 import { looperEngine } from '../lib/audio-worklet';
 import { createMidiRouter, MidiRouter } from '../lib/midiRouter';
@@ -19,84 +27,118 @@ export function useEngineInitialization() {
 
     const initialize = useCallback(async () => {
         try {
-            // 1. Initialize base engines (AudioContext, AudioWorklet, MIDI)
+            // Step 1: Mark initialized in store (requests MIDI access)
             await initializeEngines();
 
-            const state = useLooperStore.getState();
-            const audioContext = state.engines.audioContext;
-            const bpm = state.song.metadata.bpm;
+            // Step 2: Start Tone.js — this creates the shared AudioContext
+            await Tone.start();
+            const audioContext = Tone.getContext().rawContext as AudioContext;
+            console.log('[Init] Tone.js started, AudioContext:', audioContext.state);
 
-            if (!audioContext) {
-                console.error('No AudioContext available after initialization');
-                return;
-            }
-
-            // 2. Initialize the AudioWorklet looper engine (creates Tone.js context)
+            // Step 3: Initialize LooperEngine (AudioWorklet)
             await looperEngine.initialize();
             console.log('[Init] LooperEngine initialized');
 
-            // 3. Initialize the SynthEngine (Tone.js PolySynth for MIDI sound sources)
+            // Step 4: Initialize SynthEngine (Tone.js PolySynth)
             await synthEngine.initialize();
             console.log('[Init] SynthEngine initialized');
 
-            // 4. Create TransportClock
+            // Step 5: Create TransportClock
+            const store = useLooperStore.getState();
+            const bpm = store.song.metadata.bpm;
             const clock = createTransportClock(audioContext, bpm);
             console.log('[Init] TransportClock created');
 
-            // 5. Wire TransportClock to LooperEngine for beat-quantized loop sync
+            // Step 6: Wire TransportClock to LooperEngine + SynthEngine
+            // Metronome state
+            let beatCount = 0;
+            const metronomeOnBeat0Note = 72; // High C (accent beat 1)
+            const metronomeOtherBeatNote = 60; // Middle C (weak beats)
+
             clock.registerSubscriber({
-                id: 'looper-engine-sync',
-                onStart: (pos: ClockPosition) => {
-                    // Reset all looper tracks at start
-                    const tracks = looperEngine.getTracks();
-                    for (const track of tracks) {
-                        if (track.hasContent && track.isPlaying) {
-                            // Tracks with content auto-play when transport starts
-                            // The worklet handles loop point internally
-                        }
-                    }
+                id: 'engine-sync',
+                onStart: (_pos: ClockPosition) => {
+                    console.log('[Clock] Transport started');
+                    beatCount = 0;
+                    // Sync initial position to store
+                    useLooperStore.setState({
+                        transport: {
+                            ...useLooperStore.getState().transport,
+                            isPlaying: true,
+                            position: clock.getPosition(),
+                        },
+                    });
                 },
                 onStop: (_pos: ClockPosition) => {
-                    // Stop all looper tracks
-                    const tracks = looperEngine.getTracks();
-                    for (const track of tracks) {
-                        if (track.isPlaying) {
-                            // Leave playing state — user can restart by pressing play
+                    console.log('[Clock] Transport stopped');
+                    useLooperStore.setState({
+                        transport: {
+                            ...useLooperStore.getState().transport,
+                            isPlaying: false,
+                            position: clock.getPosition(),
+                        },
+                    });
+                },
+                onTick: (pos: ClockPosition) => {
+                    // ~40Hz — update store position so TimelineRuler + modules see it
+                    useLooperStore.setState({
+                        transport: {
+                            ...useLooperStore.getState().transport,
+                            position: pos,
+                        },
+                    });
+                },
+                onBeat: (pos: ClockPosition) => {
+                    // Play metronome click through SynthEngine
+                    const note = pos.beatInBar === 0
+                        ? metronomeOnBeat0Note
+                        : metronomeOtherBeatNote;
+                    const velocity = pos.beatInBar === 0 ? 0.9 : 0.5;
+                    synthEngine.noteOn('__metronome__', note, velocity);
+                    setTimeout(() => {
+                        synthEngine.noteOff('__metronome__', note);
+                    }, 50);
+                    beatCount++;
+
+                    // Notify modules on beat boundaries (for quantized actions)
+                    const modules = useLooperStore.getState().song.modules;
+                    for (const mod of modules) {
+                        if (mod.type === 'arrangement') continue;
+                        const modPos = mod.position;
+                        if (modPos) {
+                            const active = pos.absoluteBeat >= modPos.startBeat &&
+                                pos.absoluteBeat < modPos.startBeat + modPos.lengthBeats;
+                            // Update module active state
+                            const current = useLooperStore.getState().moduleStates[mod.id];
+                            if (current && current.isActive !== active) {
+                                useLooperStore.getState().updateModuleState(mod.id, { isActive: active });
+                            }
                         }
                     }
                 },
-                onBeat: (_pos: ClockPosition) => {
-                    // Beat boundary — used for quantized recording start/stop
-                    // Future: trigger quantization events
-                },
-                onBar: (_pos: ClockPosition) => {
-                    // Bar boundary — used for loop alignment
-                    // Future: sync loop points to bar boundaries
+                onBar: (pos: ClockPosition) => {
+                    // Bar boundary — trigger arrangement section evaluation
                 },
                 onBpmChange: (newBpm: number) => {
-                    // BPM changes propagate through the clock automatically
-                    console.log(`[Init] BPM changed to ${newBpm}`);
+                    Tone.Transport.bpm.value = newBpm;
+                    console.log(`[Clock] BPM synced to ${newBpm}`);
                 },
             });
 
-            // 6. Create and wire ArrangementEngine
+            // Step 7: Create and wire ArrangementEngine
             const arrangementEngine = createArrangementEngine(() => useLooperStore.getState());
             arrangementEngine.setClock(clock);
             console.log('[Init] ArrangementEngine wired to clock');
 
-            // 7. Initialize MidiRouter (if MIDI access available)
+            // Step 8: Initialize MidiRouter (if MIDI access available)
             let midiRouter: MidiRouter | null = null;
             try {
                 const midiAccess = await navigator.requestMIDIAccess();
                 midiRouter = createMidiRouter(() => useLooperStore.getState());
                 await midiRouter.initialize(midiAccess);
-
-                // Auto-generate MIDI bindings from current module layout
                 midiRouter.autoGenerateBindings();
 
-                // Route WebMIDI note-on/off to synth engine for LiveMidiSource
                 midiRouter.onRouterEvent((event) => {
-                    // Update UI MIDI activity indicator
                     useLooperStore.setState({
                         ui: {
                             ...useLooperStore.getState().ui,
@@ -110,16 +152,39 @@ export function useEngineInitialization() {
                 console.log('[Init] WebMIDI not available — MIDI control disabled');
             }
 
-            // 8. Update store with all engine references
+            // Step 9: Create synth voices for all existing module tracks
+            const currentModules = useLooperStore.getState().song.modules;
+            for (const module of currentModules) {
+                if (module.type === 'arrangement') continue;
+                for (const track of module.tracks) {
+                    const soundSource = track.soundSource;
+                    if (soundSource.type === 'midiClip' || soundSource.type === 'liveMidi') {
+                        const voiceId = `${module.id}:${track.index}`;
+                        const engine = soundSource.soundEngine;
+                        synthEngine.setVoice(voiceId, engine, track.volume);
+                    }
+                }
+            }
+
+            // Create a built-in metronome voice so clicks play through the SynthEngine
+            synthEngine.setVoice('__metronome__', {
+                type: 'tonejsPolySynth',
+                synthConfig: { oscillatorType: 'square', attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 },
+            }, 0.3);
+            console.log(`[Init] Created synth voices for ${synthEngine.voiceCount} tracks (including metronome)`);
+
+            // Step 10: Update store with all engine references
             useLooperStore.setState({
                 engines: {
                     ...useLooperStore.getState().engines,
+                    audioContext,
+                    looperEngine,
                     clockEngine: clock,
                     midiRouter,
                 },
             });
 
-            console.log('[Init] All engines wired successfully');
+            console.log('[Init] All engines wired successfully. AudioContext state:', audioContext.state);
         } catch (error) {
             console.error('Engine initialization failed:', error);
         }

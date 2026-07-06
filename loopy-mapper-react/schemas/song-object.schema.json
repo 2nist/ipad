@@ -1,0 +1,759 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loopy-mapper.app/schemas/song-object.schema.json",
+  "title": "Loopy Mapper Song Object",
+  "description": "Portable song structure for the Loopy Mapper browser workstation. Designed for human + AI co-authorship. Every field maps 1:1 to the TypeScript domain model in src/types/index.ts plus AI/lyrics/provenance extensions.",
+  "type": "object",
+  "required": ["schemaVersion", "metadata", "structure", "modules"],
+  "additionalProperties": false,
+  "properties": {
+
+    "schemaVersion": {
+      "type": "string",
+      "description": "Semantic version of this schema. Incremented on breaking changes.",
+      "examples": ["1.0.0"]
+    },
+
+    "metadata": {
+      "$ref": "#/$defs/SongMetadata"
+    },
+
+    "structure": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered song sections (intro → verse → chorus → ...). Maps to SongSection[].",
+      "items": { "$ref": "#/$defs/SongSection" }
+    },
+
+    "modules": {
+      "type": "array",
+      "description": "ModuleCard instances — rhythm, harmonic, and arrangement modules with track configs and expressions.",
+      "items": { "$ref": "#/$defs/ModuleCard" }
+    },
+
+    "midiBindings": {
+      "type": "array",
+      "description": "Explicit MIDI bindings between hardware controllers and module actions.",
+      "items": { "$ref": "#/$defs/MidiBinding" }
+    },
+
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    }
+
+  },
+
+  "$defs": {
+
+    "SongMetadata": {
+      "type": "object",
+      "required": ["title", "bpm", "timeSignature", "key", "scale"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Song title",
+          "examples": ["Get Lucky"]
+        },
+        "artist": {
+          "type": "string",
+          "description": "Performing artist / band name",
+          "examples": ["Daft Punk"]
+        },
+        "bpm": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 300,
+          "description": "Beats per minute",
+          "examples": [116]
+        },
+        "key": {
+          "type": "string",
+          "enum": ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"],
+          "description": "Root key (enharmonic aware — use C# or Db, not both)"
+        },
+        "scale": {
+          "type": "string",
+          "enum": [
+            "major", "minor", "harmonic minor", "melodic minor",
+            "dorian", "phrygian", "lydian", "mixolydian", "locrian",
+            "dominant", "blues",
+            "pentatonic major", "pentatonic minor",
+            "chromatic"
+          ],
+          "description": "Scale / mode"
+        },
+        "timeSignature": {
+          "$ref": "#/$defs/TimeSignature"
+        },
+        "genre": {
+          "type": "string",
+          "description": "Musical genre (freeform, AI-assigned or manual)",
+          "examples": ["disco", "funk", "pop"]
+        },
+        "tags": {
+          "type": "array",
+          "description": "Flexible tags for categorization (mood, style, era, instrumentation)",
+          "items": { "type": "string" },
+          "examples": [["upbeat", "four-on-floor", "70s"]]
+        },
+        "duration": {
+          "type": "number",
+          "description": "Total song duration in seconds (from LRCLIB/Spotify/MusicBrainz)",
+          "examples": [248.0]
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Performance difficulty rating 1 (beginner) to 5 (expert)",
+          "examples": [2]
+        }
+      }
+    },
+
+    "TimeSignature": {
+      "type": "object",
+      "required": ["numerator", "denominator"],
+      "additionalProperties": false,
+      "properties": {
+        "numerator": {
+          "type": "integer",
+          "enum": [2, 3, 4, 5, 6, 7, 9, 12],
+          "description": "Beats per bar",
+          "examples": [4]
+        },
+        "denominator": {
+          "type": "integer",
+          "enum": [2, 4, 8, 16],
+          "description": "Beat unit",
+          "examples": [4]
+        }
+      }
+    },
+
+    "SongSection": {
+      "type": "object",
+      "required": ["id", "name", "bars"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID for this section",
+          "examples": ["a1b2c3d4-..."]
+        },
+        "name": {
+          "type": "string",
+          "description": "Section label (Intro, Verse 1, Chorus, Bridge, Outro, etc.)",
+          "examples": ["Chorus"]
+        },
+        "bars": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128,
+          "description": "Length of this section in bars"
+        },
+        "transition": {
+          "type": "string",
+          "enum": ["instant", "nextBar", "fade"],
+          "default": "nextBar",
+          "description": "How to transition into this section"
+        },
+        "chordProgression": {
+          "type": "array",
+          "description": "Chord progression for this section. Each step = one chord lasting N bars.",
+          "items": { "$ref": "#/$defs/ChordStep" }
+        },
+        "lyrics": {
+          "type": "array",
+          "description": "Timestamped lyric lines for this section (from LRCLIB synced lyrics or manual input)",
+          "items": { "$ref": "#/$defs/LyricLine" }
+        },
+        "sourceTimestamps": {
+          "type": "object",
+          "description": "Raw time range in the original source that maps to this section. Used for AI section detection.",
+          "additionalProperties": false,
+          "properties": {
+            "startMs": {
+              "type": "number",
+              "description": "Section start time in milliseconds from song beginning"
+            },
+            "endMs": {
+              "type": "number",
+              "description": "Section end time in milliseconds from song beginning"
+            }
+          }
+        },
+        "activeModules": {
+          "type": "array",
+          "description": "ModuleCard IDs that are active/playing during this section",
+          "items": { "type": "string" }
+        },
+        "markers": {
+          "type": "array",
+          "description": "Beat-level markers within this section (cues, loop points, expression triggers)",
+          "items": { "$ref": "#/$defs/SectionMarker" }
+        }
+      }
+    },
+
+    "ChordStep": {
+      "type": "object",
+      "required": ["degree", "quality", "duration"],
+      "additionalProperties": false,
+      "properties": {
+        "degree": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7,
+          "description": "Scale degree (1=I tonic, 4=IV subdominant, 5=V dominant, etc.)"
+        },
+        "quality": {
+          "type": "string",
+          "enum": ["maj", "min", "dim", "aug", "dom7", "maj7", "min7", "min7b5", "dim7", "sus2", "sus4", "aug7"],
+          "description": "Chord quality"
+        },
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Duration of this chord in bars (supports fractional bars e.g. 0.5 for half-bar changes)"
+        }
+      }
+    },
+
+    "LyricLine": {
+      "type": "object",
+      "required": ["text"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Lyric text for this line"
+        },
+        "timestampMs": {
+          "type": "number",
+          "description": "Start time in milliseconds from song beginning (from LRCLIB synced lyrics or manual)"
+        },
+        "durationMs": {
+          "type": "number",
+          "description": "Duration of this lyric line in milliseconds (for display/scroll sync)"
+        }
+      }
+    },
+
+    "SectionMarker": {
+      "type": "object",
+      "required": ["beat", "label", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "beat": {
+          "type": "number",
+          "description": "Beat offset from section start",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label (e.g., 'Fill here', 'Drop', 'Solo start')"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["cue", "loopPoint", "expressionTrigger"],
+          "description": "Marker type"
+        },
+        "targetModuleId": {
+          "type": "string",
+          "description": "Optional: which module this marker targets"
+        }
+      }
+    },
+
+    "ModuleCard": {
+      "type": "object",
+      "required": ["id", "type", "label", "size", "colorAccent", "bus", "tracks", "quantization", "quantizationEnabled", "baseMidiNote", "isPreset"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID for this module instance"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rhythm", "harmonic", "arrangement"],
+          "description": "Module category — determines the engine that drives it"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display name",
+          "examples": ["Drum Kit", "Bass Synth", "Chord Pads"]
+        },
+        "size": {
+          "type": "string",
+          "enum": ["sm", "md", "lg"],
+          "description": "UI card size"
+        },
+        "colorAccent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Hex accent color for the module card",
+          "examples": ["#22c55e"]
+        },
+        "bus": {
+          "type": "string",
+          "enum": ["red", "blue", "green"],
+          "description": "Mix bus color assignment"
+        },
+        "tracks": {
+          "type": "array",
+          "description": "Audio/MIDI tracks within this module",
+          "items": { "$ref": "#/$defs/ModuleTrackConfig" }
+        },
+        "quantization": {
+          "type": "string",
+          "enum": ["1_16", "1_8", "1_4", "1_bar", "2_bar", "4_bar", "8_bar"],
+          "description": "Recording/trigger quantization preset"
+        },
+        "quantizationEnabled": {
+          "type": "boolean",
+          "description": "Whether quantization is active for this module"
+        },
+        "baseMidiNote": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Base MIDI note — track notes offset from this (base + trackIndex = trigger note)"
+        },
+        "isPreset": {
+          "type": "boolean",
+          "description": "Whether this module was created from a preset"
+        },
+        "presetId": {
+          "type": "string",
+          "description": "ID of the source preset, if applicable"
+        },
+        "position": {
+          "type": "object",
+          "description": "Timeline positioning — module only activates when playhead is within this range",
+          "additionalProperties": false,
+          "properties": {
+            "startBeat": { "type": "number" },
+            "lengthBeats": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "canvasPosition": {
+          "type": "object",
+          "description": "Infinite canvas position (logical pixels)",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        },
+        "shapeConfig": {
+          "type": "object",
+          "description": "Rhythm module shape visualization config (numerator/denominator polygon)",
+          "additionalProperties": false,
+          "properties": {
+            "numerator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "vertices": { "type": "integer" },
+                "svgPoints": { "type": "string" },
+                "splitLine": { "type": "boolean" },
+                "splitLineType": { "type": "string", "enum": ["none", "diagonal", "horizontal"] }
+              }
+            },
+            "denominator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "vertices": { "type": "integer" },
+                "svgPoints": { "type": "string" },
+                "scale": { "type": "number" }
+              }
+            }
+          }
+        },
+        "expression": {
+          "oneOf": [
+            { "$ref": "#/$defs/RhythmExpression" },
+            { "$ref": "#/$defs/HarmonicExpression" },
+            { "$ref": "#/$defs/ArrangementExpression" }
+          ],
+          "description": "Optional expression submodule (fill, variation, transition)"
+        }
+      }
+    },
+
+    "ModuleTrackConfig": {
+      "type": "object",
+      "required": ["index", "label", "midiNote", "pan", "volume", "actions", "loopBehavior", "volumeRampMs", "soundSource"],
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based track index within the module"
+        },
+        "label": {
+          "type": "string",
+          "description": "Track display name",
+          "examples": ["Kick", "Snare", "Bass"]
+        },
+        "midiNote": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "MIDI note number for this track"
+        },
+        "pan": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "description": "Stereo pan (-1 left, 0 center, 1 right)"
+        },
+        "volume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Track volume 0.0–1.0"
+        },
+        "actions": {
+          "type": "array",
+          "description": "Action references bound to this track",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "actionId": { "type": "string" },
+              "enabled": { "type": "boolean" },
+              "triggerNote": { "type": "integer", "minimum": 0, "maximum": 127 },
+              "quantizationOverride": {
+                "type": "string",
+                "enum": ["1_16", "1_8", "1_4", "1_bar", "2_bar", "4_bar", "8_bar"]
+              }
+            }
+          }
+        },
+        "loopBehavior": {
+          "type": "string",
+          "enum": ["toggle", "recordAutoPlay", "recordWait", "oneShot"],
+          "description": "How the track responds to loop triggers"
+        },
+        "volumeRampMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Volume ramp time in milliseconds for click-free transitions"
+        },
+        "muteGroup": {
+          "type": "string",
+          "description": "Optional mute group — only one track in a group plays at a time"
+        },
+        "soundSource": {
+          "oneOf": [
+            { "$ref": "#/$defs/AudioInputSource" },
+            { "$ref": "#/$defs/MidiClipSource" },
+            { "$ref": "#/$defs/LiveMidiSource" }
+          ],
+          "description": "Sound source configuration for this track"
+        }
+      }
+    },
+
+    "AudioInputSource": {
+      "type": "object",
+      "required": ["type", "inputChannel", "monitorEnabled"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "audioInput" },
+        "inputChannel": { "type": "integer", "minimum": 0, "description": "Audio input channel to record from" },
+        "monitorEnabled": { "type": "boolean", "description": "Whether input monitoring is active" }
+      }
+    },
+
+    "MidiClipSource": {
+      "type": "object",
+      "required": ["type", "clipId", "soundEngine", "transpose", "velocityScale"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "midiClip" },
+        "clipId": { "type": ["string", "null"], "description": "ID of the MIDI clip from the dataset (null if unassigned)" },
+        "clipData": { "description": "Optional inline MIDI binary data" },
+        "soundEngine": { "$ref": "#/$defs/SoundEngine" },
+        "transpose": { "type": "integer", "description": "Semitone transpose offset" },
+        "velocityScale": { "type": "number", "minimum": 0, "maximum": 2, "description": "Velocity scaling factor (1.0 = original)" },
+        "followChordProgression": { "type": "boolean", "description": "Whether this clip follows the section's chord progression" },
+        "transposeScaleAware": { "type": "boolean", "description": "Whether transpose respects key/scale (diatonic transpose)" }
+      }
+    },
+
+    "LiveMidiSource": {
+      "type": "object",
+      "required": ["type", "midiChannel", "soundEngine", "recordMidi"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "liveMidi" },
+        "midiChannel": { "type": "integer", "minimum": 1, "maximum": 16, "description": "MIDI input channel" },
+        "soundEngine": { "$ref": "#/$defs/SoundEngine" },
+        "recordMidi": { "type": "boolean", "description": "Whether incoming MIDI is recorded to a sequence" },
+        "recordedSequence": {
+          "type": "array",
+          "description": "Recorded MIDI events (if recordMidi is true)",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "deltaTime": { "type": "number" },
+              "type": { "type": "string", "enum": ["noteOn", "noteOff"] },
+              "note": { "type": "integer", "minimum": 0, "maximum": 127 },
+              "velocity": { "type": "integer", "minimum": 0, "maximum": 127 }
+            }
+          }
+        }
+      }
+    },
+
+    "SoundEngine": {
+      "oneOf": [
+        { "$ref": "#/$defs/ToneJsPolySynthEngine" },
+        { "$ref": "#/$defs/SamplerEngine" },
+        { "$ref": "#/$defs/MidiOutEngine" }
+      ],
+      "description": "Sound generation engine for a track"
+    },
+
+    "ToneJsPolySynthEngine": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "tonejsPolySynth" },
+        "synthConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "oscillatorType": { "type": "string", "enum": ["triangle", "sine", "square", "sawtooth"] },
+            "attack": { "type": "number", "minimum": 0 },
+            "decay": { "type": "number", "minimum": 0 },
+            "sustain": { "type": "number", "minimum": 0, "maximum": 1 },
+            "release": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "SamplerEngine": {
+      "type": "object",
+      "required": ["type", "sampleMap", "rootNote"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "sampler" },
+        "sampleMap": {
+          "type": "object",
+          "description": "Map of MIDI note → sample URL (or base64 data URI)",
+          "additionalProperties": { "type": "string" }
+        },
+        "rootNote": { "type": "integer", "minimum": 0, "maximum": 127, "description": "Root note for sample pitch mapping" }
+      }
+    },
+
+    "MidiOutEngine": {
+      "type": "object",
+      "required": ["type", "outputDeviceId", "outputChannel"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "midiOut" },
+        "outputDeviceId": { "type": "string", "description": "WebMIDI output device ID" },
+        "outputChannel": { "type": "integer", "minimum": 1, "maximum": 16, "description": "MIDI output channel" }
+      }
+    },
+
+    "RhythmExpression": {
+      "type": "object",
+      "required": ["type", "trigger", "offsetBeats", "durationBeats", "behavior", "soundEngine", "transpose", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "fill" },
+        "clipId": { "type": ["string", "null"] },
+        "clipData": { "description": "Optional inline MIDI binary data" },
+        "trigger": { "$ref": "#/$defs/ExpressionTrigger" },
+        "offsetBeats": { "type": "number", "description": "Beat offset from trigger point" },
+        "durationBeats": { "type": "number", "exclusiveMinimum": 0 },
+        "behavior": { "type": "string", "enum": ["replace", "layer", "morph"] },
+        "soundEngine": { "$ref": "#/$defs/SoundEngine" },
+        "transpose": { "type": "integer" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+
+    "HarmonicExpression": {
+      "type": "object",
+      "required": ["type", "trigger", "behavior", "transpose", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "variation" },
+        "chordProgressionOverride": { "type": "array", "items": { "$ref": "#/$defs/ChordStep" } },
+        "clipId": { "type": ["string", "null"] },
+        "clipData": { "description": "Optional inline MIDI binary data" },
+        "trigger": { "$ref": "#/$defs/ExpressionTrigger" },
+        "durationBars": { "type": "number" },
+        "behavior": { "type": "string", "enum": ["replace", "layer", "morph"] },
+        "soundEngine": { "$ref": "#/$defs/SoundEngine" },
+        "transpose": { "type": "integer" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+
+    "ArrangementExpression": {
+      "type": "object",
+      "required": ["type", "fromSection", "toSection", "trigger", "offsetBeats", "durationBeats", "behavior", "soundEngine", "transpose", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "transition" },
+        "fromSection": { "type": "string", "description": "Source section ID" },
+        "toSection": { "type": "string", "description": "Target section ID" },
+        "trigger": { "$ref": "#/$defs/ExpressionTrigger" },
+        "clipId": { "type": ["string", "null"] },
+        "clipData": { "description": "Optional inline MIDI binary data" },
+        "offsetBeats": { "type": "number" },
+        "durationBeats": { "type": "number", "exclusiveMinimum": 0 },
+        "behavior": { "type": "string", "enum": ["replace", "layer", "morph"] },
+        "soundEngine": { "$ref": "#/$defs/SoundEngine" },
+        "transpose": { "type": "integer" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+
+    "ExpressionTrigger": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["everyNRepeats", "onSectionChange", "manual", "random"],
+          "description": "What triggers the expression"
+        },
+        "everyN": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "For 'everyNRepeats': trigger every N loop repeats"
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "For 'random': probability of triggering each cycle"
+        },
+        "fromSection": {
+          "type": "string",
+          "description": "For 'onSectionChange': transition from this section"
+        },
+        "toSection": {
+          "type": "string",
+          "description": "For 'onSectionChange': transition to this section"
+        }
+      }
+    },
+
+    "MidiBinding": {
+      "type": "object",
+      "required": ["id", "trigger", "target", "moduleId", "autoGenerated"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "trigger": {
+          "type": "object",
+          "required": ["type", "channel"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["noteOn", "noteOff", "cc", "programChange", "pitchBend"] },
+            "note": { "type": "integer", "minimum": 0, "maximum": 127 },
+            "ccNumber": { "type": "integer", "minimum": 0, "maximum": 127 },
+            "channel": { "type": ["integer", "null"], "minimum": 1, "maximum": 16 },
+            "velocityMin": { "type": "integer", "minimum": 0, "maximum": 127 },
+            "velocityMax": { "type": "integer", "minimum": 0, "maximum": 127 }
+          }
+        },
+        "target": { "type": "string", "description": "Target identifier in the format moduleId:trackIndex" },
+        "moduleId": { "type": "string" },
+        "autoGenerated": { "type": "boolean", "description": "Whether this binding was auto-generated from module layout" },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "command": { "type": "string" },
+              "sectionIndex": { "type": "integer" },
+              "param": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": { "type": "string" },
+                  "target": { "type": "string" },
+                  "value": { "type": "number" },
+                  "rampTimeMs": { "type": "number" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "Provenance": {
+      "type": "object",
+      "description": "Origin tracking for AI-generated or imported songs. Not required for manual creations.",
+      "additionalProperties": true,
+      "properties": {
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Primary source URL (LRCLIB, Spotify, MusicBrainz, etc.)"
+        },
+        "sourceName": {
+          "type": "string",
+          "description": "Human-readable source identifier",
+          "examples": ["LRCLIB: Daft Punk - Get Lucky"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "AI confidence in overall structure accuracy (0.0–1.0)"
+        },
+        "generatedBy": {
+          "type": "string",
+          "description": "Tool/agent that created this song object",
+          "examples": ["loopy-mapper-ai v1.0.0"]
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of generation"
+        },
+        "references": {
+          "type": "array",
+          "description": "Chain of data sources used to build this song object",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["lrclib", "spotify", "musicbrainz", "hooktheory", "manual", "aiInference"],
+                "description": "Source type"
+              },
+              "url": { "type": "string", "format": "uri" },
+              "id": { "type": "string", "description": "Source-specific identifier (track ID, URI, etc.)" },
+              "retrievedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    }
+
+  }
+}

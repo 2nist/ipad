@@ -18,7 +18,7 @@ export type SynthCallback = (voiceId: SynthVoiceId, event: "noteOn" | "noteOff",
  */
 export class SynthEngine {
     private audioContext: AudioContext | null = null;
-    private voices: Map<SynthVoiceId, Tone.PolySynth> = new Map();
+    private voices: Map<SynthVoiceId, Tone.PolySynth | Tone.Sampler> = new Map();
     private gains: Map<SynthVoiceId, Tone.Gain> = new Map();
     private masterGain: Tone.Gain | null = null;
     private output: Tone.ToneAudioNode | null = null;
@@ -90,18 +90,48 @@ export class SynthEngine {
             }
 
             case "sampler": {
-                // Sampler engine — stub for future SoundFont support
-                // For now, fall back to a generic synth
-                console.warn(`[SynthEngine] Sampler not yet implemented for ${voiceId}, falling back to PolySynth`);
-                const synth = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: "triangle" },
-                    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.5 },
-                });
-                const gain = new Tone.Gain(volume);
-                synth.connect(gain);
-                gain.connect(this.masterGain);
-                this.voices.set(voiceId, synth);
-                this.gains.set(voiceId, gain);
+                // Build a Tone.Sampler from the sampleMap
+                // sampleMap is { midiNote: sampleUrl }
+                const samplerEngine = engine as import("../types").SamplerEngine;
+                const urls: Record<string, string> = {};
+
+                // Convert MIDI note numbers to Tone.js note names (C2, D#2, etc.)
+                const midiToNote = (midi: number): string => {
+                    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                    const octave = Math.floor(midi / 12) - 1;
+                    const noteIndex = midi % 12;
+                    return `${notes[noteIndex]}${octave}`;
+                };
+
+                for (const [midiNote, sampleUrl] of Object.entries(samplerEngine.sampleMap)) {
+                    const noteName = midiToNote(Number(midiNote));
+                    // Skip empty URLs — they cause Tone.Sampler fetch errors
+                    if (sampleUrl && sampleUrl.length > 0) {
+                        urls[noteName] = sampleUrl;
+                    }
+                }
+
+                // Only create a sampler if there are real sample URLs
+                if (Object.keys(urls).length > 0) {
+                    const sampler = new Tone.Sampler({
+                        urls,
+                        baseUrl: "",
+                        onload: () => {
+                            console.log(`[SynthEngine] Sampler loaded for ${voiceId}`);
+                        },
+                    });
+
+                    const gain = new Tone.Gain(volume);
+                    sampler.connect(gain);
+                    gain.connect(this.masterGain!);
+
+                    this.voices.set(voiceId, sampler);
+                    this.gains.set(voiceId, gain);
+                } else {
+                    // No samples yet — don't create a voice. The voice will be created
+                    // when the user assigns a sample through the UI (via OUT menu).
+                    console.log(`[SynthEngine] No samples for ${voiceId} — voice deferred until sample assignment`);
+                }
                 break;
             }
 

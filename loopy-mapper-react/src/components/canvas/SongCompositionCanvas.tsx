@@ -1,95 +1,233 @@
 // ═══════════════════════════════════════════════════════════════════
-// SONG COMPOSITION CANVAS — Main composition view
-// Three toggleable views: Sections Only, + Modules, Full Composition
+// SONG COMPOSITION CANVAS — Infinite 2D pan/zoom work area
+// Modules are placed absolutely on the canvas and can be dragged.
+// Mouse drag on empty space pans the canvas. Wheel zooms.
 // ═══════════════════════════════════════════════════════════════════
 
-import React from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLooperStore } from '../../store/store';
-import { SectionTimeline } from './SectionTimeline';
-import { ModuleLanes } from './ModuleLanes';
-import { ChordStrip } from './ChordStrip';
-import { PlayheadOverlay } from './PlayheadOverlay';
+import { useEngineInitialization } from '../../hooks/useEngineInitialization';
+import { ModuleCardRenderer } from '../modules/ModuleCardRenderer';
+
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2;
+const DEFAULT_ZOOM = 1;
 
 export const SongCompositionCanvas: React.FC = () => {
-    const sections = useLooperStore(s => s.song.arrangement);
-    const viewLevel = useLooperStore(s => s.ui.canvasView.viewLevel);
-    const initialized = useLooperStore(s => s.engines.initialized);
-    const initializeEngines = useLooperStore(s => s.initializeEngines);
+    const modules = useLooperStore(s => s.song.modules);
+    const { initialized: engineReady, initialize } = useEngineInitialization();
+    const lockSize = useLooperStore(s => s.ui.canvasLockSize);
+    const lockPosition = useLooperStore(s => s.ui.canvasLockPosition);
+    const bothLocked = lockSize && lockPosition;
+
+    // Canvas state
+    const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [draggingModule, setDraggingModule] = useState<string | null>(null);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [panning, setPanning] = useState(false);
+    const canvasRef = useRef<HTMLDivElement>(null);
+
+    // Auto-initialize audio
+    useEffect(() => {
+        if (!engineReady) {
+            initialize().catch(() => {
+                console.log('[Canvas] Auto-init blocked by browser audio policy');
+            });
+        }
+    }, [engineReady, initialize]);
+
+    // Wheel zoom
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+        e.preventDefault();
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        setZoom(prev => {
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta));
+
+            // Zoom toward mouse position
+            setOffset(off => ({
+                x: mouseX - (mouseX - off.x) * (newZoom / prev),
+                y: mouseY - (mouseY - off.y) * (newZoom / prev),
+            }));
+
+            return newZoom;
+        });
+    }, []);
+
+    // Canvas pan (middle-mouse or empty-space drag)
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        // Only pan on empty canvas (not on module cards)
+        if ((e.target as HTMLElement).closest('[data-module-card]')) return;
+        setPanning(true);
+        setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+        (e.target as HTMLElement).style.cursor = 'grabbing';
+    }, [offset]);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        // Module dragging
+        if (draggingModule) {
+            const dx = (e.clientX - dragStart.x) / zoom;
+            const dy = (e.clientY - dragStart.y) / zoom;
+            useLooperStore.getState().updateModule(draggingModule, {
+                canvasPosition: {
+                    x: (dragStart as any)._startX + dx,
+                    y: (dragStart as any)._startY + dy,
+                },
+            });
+            return;
+        }
+
+        // Canvas panning
+        if (panning) {
+            setOffset({
+                x: e.clientX - dragStart.x,
+                y: e.clientY - dragStart.y,
+            });
+        }
+    }, [draggingModule, panning, dragStart, zoom]);
+
+    const handleMouseUp = useCallback(() => {
+        setPanning(false);
+        setDraggingModule(null);
+        if (canvasRef.current) canvasRef.current.style.cursor = 'default';
+    }, []);
+
+    // Module drag handlers (respect lock state)
+    const startDragModule = useCallback((moduleId: string, e: React.MouseEvent) => {
+        if (lockPosition || bothLocked) return;
+        e.stopPropagation();
+        const mod = modules.find(m => m.id === moduleId);
+        const pos = mod?.canvasPosition || { x: 0, y: 0 };
+        setDraggingModule(moduleId);
+        setDragStart({
+            x: e.clientX,
+            y: e.clientY,
+            ...({ _startX: pos.x, _startY: pos.y } as any),
+        });
+    }, [modules, lockPosition, bothLocked]);
+
+    // Filter out arrangement modules (shown in sidebar)
+    const soundModules = modules.filter(m => m.type !== 'arrangement');
 
     return (
-        <div className="flex flex-col h-full bg-zinc-950 text-white">
-            {/* Audio initialization prompt */}
-            {!initialized && (
-                <div className="flex items-center justify-center py-8 bg-zinc-900 border-b border-zinc-700">
+        <div className="absolute inset-0 flex flex-col bg-zinc-950 text-white">
+            {/* Audio init banner */}
+            {!engineReady && (
+                <div className="flex items-center justify-center py-1.5 bg-amber-900/40 border-b border-amber-700/30 text-[11px] text-amber-300 flex-shrink-0">
+                    <span>Audio is not initialized.</span>
                     <button
-                        onClick={() => initializeEngines()}
-                        className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
+                        onClick={() => initialize()}
+                        className="ml-2 px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-medium"
                     >
-                        Initialize Audio & MIDI
+                        Enable Sound
                     </button>
-                    <span className="ml-3 text-zinc-500 text-xs">
-                        Required for playback
-                    </span>
                 </div>
             )}
 
-            {/* Main canvas area */}
-            <div className="flex-1 overflow-auto p-4">
-                <div className="relative">
-                    {/* Section Timeline */}
-                    <SectionTimeline />
-
-                    {/* Module Lanes (views 2 and 3) */}
-                    {viewLevel !== 'sectionsOnly' && <ModuleLanes />}
-
-                    {/* Chord Strip (when a section is selected) */}
-                    <ChordStrip />
-
-                    {/* Full Composition extras (view 3 only) */}
-                    {viewLevel === 'fullComposition' && (
-                        <div className="mt-4 p-3 bg-zinc-800/20 border border-dashed border-zinc-700 rounded-lg">
-                            <span className="text-[10px] text-zinc-500">
-                                Full Composition View — Expression markers, MIDI mapping, and audio meters
-                                will appear here.
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Empty state */}
-                    {sections.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 text-zinc-600">
-                            <div className="text-4xl mb-4">🎵</div>
-                            <h2 className="text-lg font-semibold mb-2">Start a new song</h2>
-                            <p className="text-sm text-zinc-500 mb-4">
-                                Add sections and modules to build your arrangement.
-                            </p>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => useLooperStore.getState().addSection()}
-                                    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                                >
-                                    + Add Section
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Playhead overlay */}
-                    <PlayheadOverlay />
+            {/* Lock indicator */}
+            {bothLocked && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 text-[10px] text-amber-400 bg-amber-900/60 px-2 py-0.5 rounded pointer-events-none border border-amber-700/30">
+                    🔒 Canvas Locked
                 </div>
+            )}
+            {lockPosition && !bothLocked && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 text-[10px] text-amber-400 bg-amber-900/40 px-2 py-0.5 rounded pointer-events-none border border-amber-700/20">
+                    ↕ Position Locked
+                </div>
+            )}
+            {lockSize && !bothLocked && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 text-[10px] text-amber-400 bg-amber-900/40 px-2 py-0.5 rounded pointer-events-none border border-amber-700/20">
+                    ⊡ Size Locked
+                </div>
+            )}
+
+            {/* Zoom indicator */}
+            <div className="absolute bottom-12 right-4 z-30 text-[10px] text-zinc-600 bg-zinc-900/80 px-1.5 py-0.5 rounded pointer-events-none">
+                {Math.round(zoom * 100)}%
             </div>
 
-            {/* Status bar */}
-            <div className="flex items-center justify-between px-4 py-1 bg-zinc-900 border-t border-zinc-800 text-[10px] text-zinc-500">
-                <div className="flex items-center gap-4">
-                    <span>{viewLevel === 'sectionsOnly' ? 'Sections Only' : viewLevel === 'sectionsWithModules' ? 'Sections + Modules' : 'Full Composition'}</span>
-                    <span>{sections.length} sections</span>
-                    <span>{useLooperStore.getState().song.modules.length} modules</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${useLooperStore.getState().engines.initialized ? 'bg-green-500' : 'bg-zinc-600'}`} />
-                    <span>{useLooperStore.getState().engines.initialized ? 'Audio Ready' : 'Audio Offline'}</span>
-                </div>
+            {/* Infinite canvas */}
+            <div
+                ref={canvasRef}
+                className="flex-1 overflow-hidden relative"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onWheel={handleWheel}
+                style={{ cursor: panning ? 'grabbing' : draggingModule ? 'grabbing' : 'grab' }}
+            >
+                {/* Infinite grid — faint lines that scroll with pan */}
+                <div
+                    className="absolute pointer-events-none"
+                    style={{
+                        inset: 0,
+                        backgroundImage: `
+                            linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)
+                        `,
+                        backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
+                        backgroundPosition: `${offset.x % (30 * zoom)}px ${offset.y % (30 * zoom)}px`,
+                    }}
+                />
+                {/* Major grid lines every 5 squares */}
+                <div
+                    className="absolute pointer-events-none"
+                    style={{
+                        inset: 0,
+                        backgroundImage: `
+                            linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255,255,255,0.12) 1px, transparent 1px)
+                        `,
+                        backgroundSize: `${150 * zoom}px ${150 * zoom}px`,
+                        backgroundPosition: `${offset.x % (150 * zoom)}px ${offset.y % (150 * zoom)}px`,
+                    }}
+                />
+
+                {/* Module cards — absolutely positioned */}
+                {soundModules.map(module => {
+                    const pos = module.canvasPosition || { x: 0, y: 0 };
+                    return (
+                        <div
+                            key={module.id}
+                            data-module-card
+                            className="absolute"
+                            style={{
+                                left: pos.x * zoom + offset.x,
+                                top: pos.y * zoom + offset.y,
+                                transform: `scale(${zoom})`,
+                                transformOrigin: 'top left',
+                            }}
+                        >
+                            {/* Drag handle — shows different cursor when locked */}
+                            <div
+                                className={lockPosition || bothLocked
+                                    ? 'cursor-default'
+                                    : 'cursor-grab active:cursor-grabbing'}
+                                onMouseDown={(e) => startDragModule(module.id, e)}
+                            >
+                                <ModuleCardRenderer module={module} />
+                            </div>
+                        </div>
+                    );
+                })}
+
+                {/* Empty state */}
+                {soundModules.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600 pointer-events-none">
+                        <div className="text-4xl mb-4">🎵</div>
+                        <h2 className="text-lg font-semibold mb-2">Empty Canvas</h2>
+                        <p className="text-sm text-zinc-500 text-center max-w-xs">
+                            Add modules from the left sidebar to start building.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,16 +1,21 @@
 // ═══════════════════════════════════════════════════════════════════
-// INFO PANEL — Right side resizable panel with context info & lyrics
+// INFO PANEL — Right side resizable panel
+// Primary: Conductor (arrangement section navigator)
+// Secondary: Song info, transport status, lyrics
 // ═══════════════════════════════════════════════════════════════════
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLooperStore } from '../../store/store';
+import { ModuleSettingsPanel } from '../editor/ModuleSettingsPanel';
 
 export const InfoPanel: React.FC = () => {
     const visible = useLooperStore(s => s.ui.rightPanelVisible);
     const toggleRightPanel = useLooperStore(s => s.toggleRightPanel);
-    const [width, setWidth] = useState(320);
-    const resizing = useRef(false);
+    const editorPanel = useLooperStore(s => s.ui.activeEditorPanel);
+    const setEditorPanel = useLooperStore(s => s.setEditorPanel);
+    const [width, setWidth] = useState(300);
 
+    const resizing = useRef(false);
     const handleMouseDown = useCallback(() => {
         resizing.current = true;
         document.body.style.cursor = 'col-resize';
@@ -20,7 +25,7 @@ export const InfoPanel: React.FC = () => {
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!resizing.current) return;
-            setWidth(w => Math.max(200, Math.min(600, w - e.movementX)));
+            setWidth(w => Math.max(200, Math.min(500, w - e.movementX)));
         };
         const handleMouseUp = () => {
             if (resizing.current) {
@@ -40,10 +45,7 @@ export const InfoPanel: React.FC = () => {
     if (!visible) return null;
 
     return (
-        <div
-            className="flex flex-col bg-zinc-900 border-l border-zinc-800 overflow-hidden relative"
-            style={{ width }}
-        >
+        <div className="flex flex-col bg-zinc-900 border-l border-zinc-800 overflow-hidden relative flex-shrink-0 h-full" style={{ width }}>
             {/* Resize handle */}
             <div
                 onMouseDown={handleMouseDown}
@@ -52,7 +54,7 @@ export const InfoPanel: React.FC = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
-                <span className="text-xs font-semibold text-zinc-300">Info</span>
+                <span className="text-xs font-semibold text-zinc-300">Arrangement</span>
                 <button
                     onClick={toggleRightPanel}
                     className="p-0.5 rounded hover:bg-zinc-700 text-zinc-500 hover:text-white"
@@ -62,149 +64,207 @@ export const InfoPanel: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
-                <SongMetadataSection />
-                <SelectedSectionSection />
-                <SelectedModuleSection />
-                <HarmonyStateSection />
-                <TransportSection />
-                <LyricsSection />
+            <div className="flex-1 overflow-y-auto">
+                {editorPanel.type === 'module' && editorPanel.moduleId ? (
+                    <ModuleSettingsPanel moduleId={editorPanel.moduleId} />
+                ) : (
+                    <div className="px-3 py-3 space-y-4 text-xs">
+                        <SectionNavigator />
+                        <ConductorInfo />
+                        <SongInfo />
+                        <TransportReadout />
+                        <LyricsSection />
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-// ─── Song Metadata ────────────────────────────────────────────────
+// ─── Section Navigator — "Now Playing / Up Next" ─────────────────
 
-const SongMetadataSection: React.FC = () => {
-    const metadata = useLooperStore(s => s.song.metadata);
-    return (
-        <Section title="Song">
-            <div className="space-y-1 text-zinc-400">
-                <Row label="Title" value={metadata.title} />
-                <Row label="BPM" value={String(metadata.bpm)} />
-                <Row label="Time" value={`${metadata.timeSignature.numerator}/${metadata.timeSignature.denominator}`} />
-                <Row label="Key" value={`${metadata.key} ${metadata.scale}`} />
-            </div>
-        </Section>
-    );
-};
-
-// ─── Selected Section ─────────────────────────────────────────────
-
-const SelectedSectionSection: React.FC = () => {
+const SectionNavigator: React.FC = () => {
     const sections = useLooperStore(s => s.song.arrangement);
-    const selectedIds = useLooperStore(s => s.ui.canvasView.selectedSectionIds);
-    const section = sections.find(s => selectedIds.includes(s.id));
+    const activeIndex = useLooperStore(s => s.transport.activeSectionIndex);
+    const isPlaying = useLooperStore(s => s.transport.isPlaying);
+    const position = useLooperStore(s => s.transport.position);
+    const jumpToSection = useLooperStore(s => s.jumpToSection);
 
-    if (!section) {
+    if (sections.length === 0) {
         return (
-            <Section title="Section">
-                <p className="text-zinc-600 italic">No section selected</p>
-            </Section>
+            <div>
+                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">Sections</h3>
+                <p className="text-zinc-600 italic text-[10px]">No sections yet. Add one from the toolbar.</p>
+            </div>
         );
     }
 
-    return (
-        <Section title={`Section: ${section.name}`}>
-            <div className="space-y-1 text-zinc-400">
-                <Row label="Bars" value={String(section.bars)} />
-                <Row label="Transition" value={section.transition} />
-                <Row label="Active Modules" value={String(section.activeModules.length)} />
-                <Row label="Chords" value={section.chordProgression.length > 0
-                    ? section.chordProgression.map(c => `${c.degree}${c.quality}`).join(', ')
-                    : 'None'}
-                />
-            </div>
-        </Section>
-    );
-};
-
-// ─── Selected Module ──────────────────────────────────────────────
-
-const SelectedModuleSection: React.FC = () => {
-    const modules = useLooperStore(s => s.song.modules);
-    const selectedIds = useLooperStore(s => s.ui.canvasView.selectedModuleIds);
-    const mod = modules.find(m => selectedIds.includes(m.id));
-
-    if (!mod) return null;
+    const totalBars = sections.reduce((sum, s) => sum + s.bars, 0);
+    const currentSection = sections[activeIndex];
+    const nextSection = activeIndex < sections.length - 1 ? sections[activeIndex + 1] : null;
 
     return (
-        <Section title={`Module: ${mod.label}`}>
-            <div className="space-y-1 text-zinc-400">
-                <Row label="Type" value={mod.type} />
-                <Row label="Size" value={mod.size} />
-                <Row label="Bus" value={mod.bus} />
-                <Row label="Tracks" value={String(mod.tracks.length)} />
-                <Row label="Quantization" value={mod.quantization} />
-                <div className="pt-1">
-                    <span className="text-zinc-500 text-[10px] uppercase tracking-wider">Tracks</span>
-                    {mod.tracks.map(t => (
-                        <div key={t.index} className="flex items-center gap-2 py-0.5">
-                            <span className="w-1 h-1 rounded-full bg-zinc-600" />
-                            <span>{t.label}</span>
-                            <span className="text-zinc-600 ml-auto">CH{t.midiNote - 35}</span>
+        <div>
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                {isPlaying ? 'Now Playing' : 'Arrangement'}
+            </h3>
+
+            {/* Now playing / active section */}
+            {currentSection && (
+                <div className="mb-2 p-2 rounded bg-green-800/30 border border-green-700/30">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-green-300">
+                            {isPlaying ? '▶ ' : ''}{currentSection.name}
+                        </span>
+                        <span className="text-[10px] text-green-600">{currentSection.bars} bars</span>
+                    </div>
+                    {isPlaying && (
+                        <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                            <span>Bar {position.barInSection + 1} / {currentSection.bars}</span>
+                            <span className="text-zinc-600">·</span>
+                            <span>Beat {Math.floor(position.beatInBar) + 1}</span>
                         </div>
-                    ))}
+                    )}
                 </div>
-            </div>
-        </Section>
-    );
-};
+            )}
 
-// ─── Harmony State ────────────────────────────────────────────────
-
-const HarmonyStateSection: React.FC = () => {
-    const sections = useLooperStore(s => s.song.arrangement);
-    const modStates = useLooperStore(s => s.moduleStates);
-    const harmonyState = Object.values(modStates).find(ms => ms.harmony);
-
-    // Show chord progression from active section
-    const activeSectionId = useLooperStore(s => s.transport.activeSectionId);
-    const activeSection = sections.find(s => s.id === activeSectionId);
-
-    return (
-        <Section title="Harmony">
-            {activeSection && activeSection.chordProgression.length > 0 ? (
-                <div className="space-y-1">
-                    <span className="text-zinc-500 text-[10px]">Progression</span>
-                    <div className="flex flex-wrap gap-1">
-                        {activeSection.chordProgression.map((c, i) => (
-                            <span key={i} className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px] font-mono">
-                                {['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'][c.degree - 1] || c.degree}
-                                {c.quality !== 'maj' ? c.quality : ''}
-                            </span>
-                        ))}
+            {/* Up next */}
+            {isPlaying && nextSection && (
+                <div className="mb-2 p-2 rounded bg-zinc-800/50 border border-zinc-700/30">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-zinc-400">Up next: <span className="text-zinc-300">{nextSection.name}</span></span>
+                        <span className="text-[10px] text-zinc-600">{nextSection.bars} bars</span>
                     </div>
                 </div>
-            ) : (
-                <p className="text-zinc-600 italic">No chord progression</p>
             )}
-            {harmonyState?.harmony && (
-                <div className="mt-2 text-zinc-500">
-                    <Row label="Cadence" value={harmonyState.harmony.cadenceType} />
-                </div>
-            )}
-        </Section>
+
+            {/* Full section list */}
+            <div className="space-y-0.5 mt-1">
+                {sections.map((s, i) => {
+                    const isActive = i === activeIndex && isPlaying;
+                    const isPast = i < activeIndex && isPlaying;
+                    return (
+                        <button
+                            key={s.id}
+                            onClick={() => jumpToSection(s.id)}
+                            className={`w-full text-left px-2 py-1 rounded text-[10px] flex items-center justify-between transition-colors ${
+                                isActive
+                                    ? 'bg-green-700/40 text-green-200'
+                                    : isPast
+                                    ? 'bg-zinc-800/20 text-zinc-500'
+                                    : 'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/40 hover:text-zinc-300'
+                            }`}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${
+                                    isActive ? 'bg-green-400' : isPast ? 'bg-zinc-600' : 'bg-zinc-600'
+                                }`} />
+                                <span>{i + 1}. {s.name}</span>
+                            </div>
+                            <span className="text-zinc-600 text-[9px]">{s.bars} bars</span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Total */}
+            <div className="mt-1.5 pt-1.5 border-t border-zinc-800 flex justify-between text-[9px] text-zinc-600">
+                <span>{sections.length} section{sections.length !== 1 ? 's' : ''}</span>
+                <span>{totalBars} bars total</span>
+            </div>
+        </div>
     );
 };
 
-// ─── Transport State ──────────────────────────────────────────────
+// ─── Conductor Info ───────────────────────────────────────────────
 
-const TransportSection: React.FC = () => {
-    const transport = useLooperStore(s => s.transport);
-    const sections = useLooperStore(s => s.song.arrangement);
-    const activeSection = sections.find(s => s.id === transport.activeSectionId);
+const ConductorInfo: React.FC = () => {
+    const modules = useLooperStore(s => s.song.modules);
+    const setBpm = useLooperStore(s => s.setBpm);
+    const bpm = useLooperStore(s => s.song.metadata.bpm);
+    const timeSig = useLooperStore(s => s.song.metadata.timeSignature);
+
+    const arrModule = modules.find(m => m.type === 'arrangement');
+    if (!arrModule) return null;
 
     return (
-        <Section title="Transport">
-            <div className="space-y-1 text-zinc-400">
-                <Row label="Playing" value={transport.isPlaying ? 'Yes' : 'No'} />
-                <Row label="Recording" value={transport.isRecording ? 'Yes' : 'No'} />
-                <Row label="Section" value={activeSection?.name || '—'} />
-                <Row label="Position" value={`Beat ${transport.position.absoluteBeat}`} />
+        <div>
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">Conductor</h3>
+            <div className="space-y-1.5">
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">BPM</span>
+                    <input
+                        type="number"
+                        min={60}
+                        max={200}
+                        value={bpm}
+                        onChange={e => setBpm(Number(e.target.value))}
+                        className="w-14 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 text-right text-zinc-300 text-[10px] font-mono"
+                    />
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">Time Sig</span>
+                    <span className="text-zinc-300 font-mono text-[10px]">{timeSig.numerator}/{timeSig.denominator}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">MIDI base</span>
+                    <span className="text-zinc-300 font-mono text-[10px]">{arrModule.baseMidiNote}</span>
+                </div>
             </div>
-        </Section>
+        </div>
+    );
+};
+
+// ─── Song Info ────────────────────────────────────────────────────
+
+const SongInfo: React.FC = () => {
+    const metadata = useLooperStore(s => s.song.metadata);
+    const modules = useLooperStore(s => s.song.modules);
+    const soundModules = modules.filter(m => m.type !== 'arrangement');
+
+    return (
+        <div>
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">Song</h3>
+            <div className="space-y-1 text-zinc-400">
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">Title</span>
+                    <span className="text-zinc-300">{metadata.title}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">Key</span>
+                    <span className="text-zinc-300">{metadata.key} {metadata.scale}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">Modules</span>
+                    <span className="text-zinc-300">{soundModules.length} sound</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─── Transport Readout ────────────────────────────────────────────
+
+const TransportReadout: React.FC = () => {
+    const transport = useLooperStore(s => s.transport);
+    const initialized = useLooperStore(s => s.engines.initialized);
+
+    return (
+        <div>
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">Transport</h3>
+            <div className="space-y-1 text-zinc-400">
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">State</span>
+                    <span className={transport.isPlaying ? 'text-green-400' : 'text-zinc-500'}>
+                        {!initialized ? 'Not initialized' : transport.isPlaying ? 'Playing' : 'Stopped'}
+                    </span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-zinc-500">Beat</span>
+                    <span className="text-zinc-300 font-mono">{Math.floor(transport.position.absoluteBeat)}</span>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -212,58 +272,19 @@ const TransportSection: React.FC = () => {
 
 const LyricsSection: React.FC = () => {
     const lyrics = useLooperStore(s => s.ui.lyrics);
-    const lyricsSectionId = useLooperStore(s => s.ui.lyricsSectionId);
     const setLyrics = useLooperStore(s => s.setLyrics);
-    const assignLyricsToSection = useLooperStore(s => s.assignLyricsToSection);
-    const sections = useLooperStore(s => s.song.arrangement);
-    const selectedIds = useLooperStore(s => s.ui.canvasView.selectedSectionIds);
-
-    const handleHighlight = () => {
-        if (selectedIds.length > 0) {
-            assignLyricsToSection(selectedIds[0]);
-        }
-    };
 
     return (
-        <Section title="Lyrics">
+        <div>
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">Lyrics</h3>
             <textarea
                 value={lyrics}
                 onChange={e => setLyrics(e.target.value)}
-                placeholder="Type or paste lyrics here..."
-                className="w-full h-32 bg-zinc-800 border border-zinc-700 rounded p-2 text-xs text-zinc-300 resize-none focus:outline-none focus:border-blue-500 placeholder-zinc-600"
+                placeholder="Type or paste lyrics..."
+                className="w-full h-24 bg-zinc-800 border border-zinc-700 rounded p-2 text-xs text-zinc-300 resize-none focus:outline-none focus:border-blue-500 placeholder-zinc-600"
             />
-            <div className="flex items-center justify-between mt-1">
-                <span className="text-zinc-600 text-[10px]">
-                    {lyricsSectionId
-                        ? `Assigned to: ${sections.find(s => s.id === lyricsSectionId)?.name || '?'}`
-                        : 'Unassigned'}
-                </span>
-                <button
-                    onClick={handleHighlight}
-                    disabled={selectedIds.length === 0 || !lyrics.trim()}
-                    className="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-[10px] transition-colors"
-                >
-                    Assign to Section
-                </button>
-            </div>
-        </Section>
+        </div>
     );
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────
-
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div>
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">{title}</h3>
-        {children}
-    </div>
-);
-
-const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-    <div className="flex justify-between">
-        <span className="text-zinc-500">{label}</span>
-        <span className="text-zinc-300">{value}</span>
-    </div>
-);
 
 export default InfoPanel;
