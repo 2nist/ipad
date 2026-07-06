@@ -591,9 +591,9 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
                     }}
                   />
                 )}
-                {/* Edit button */}
-                <button
-                  className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity text-zinc-500 hover:text-zinc-200"
+                {/* Edit button — uses div not button to avoid HTML spec nesting violation */}
+                <div
+                  className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity text-zinc-500 hover:text-zinc-200 cursor-pointer"
                   title="Edit track"
                   onClick={e => {
                     e.stopPropagation();
@@ -601,7 +601,7 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
                   }}
                 >
                   <Edit2 size={8} />
-                </button>
+                </div>
               </button>
             );
           })}
