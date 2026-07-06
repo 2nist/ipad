@@ -5,14 +5,15 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Play, Square, Loader2, Drum, Search, Wand2 } from 'lucide-react';
+import { Play, Square, Loader2, Drum, Search, Wand2, Upload, Trash2 } from 'lucide-react';
 import { useLooperStore } from '../../store/store';
 import { synthEngine } from '../../lib/synthEngine';
 import { detectDrumNote } from '../../lib/drumMapping';
+import { addUploadedSamples, getUploadedSamples, clearUploadedSamples } from '../../lib/sampleStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8766';
 
-type KitSource = 'builtin' | 'server';
+type KitSource = 'builtin' | 'server' | 'uploaded';
 
 interface SampleEntry {
   filename: string;
@@ -51,6 +52,40 @@ export const DrumKitBrowser: React.FC = () => {
   const [previewVoice, setPreviewVoice] = useState<any>(null);
   const [serverDown, setServerDown] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [uploadedKit, setUploadedKit] = useState<KitEntry | null>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  // Load user uploads (IndexedDB) into a synthetic "My Uploads" kit.
+  const loadUploads = useCallback(async () => {
+    const recs = await getUploadedSamples();
+    if (recs.length === 0) { setUploadedKit(null); return; }
+    setUploadedKit({
+      name: 'My Uploads',
+      sampleCount: recs.length,
+      source: 'uploaded',
+      samples: recs.map(r => ({ filename: r.filename, url: r.dataUrl })),
+    });
+  }, []);
+
+  useEffect(() => { loadUploads(); }, [loadUploads]);
+
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    setUploadBusy(true);
+    try {
+      const added = await addUploadedSamples(files);
+      if (added.length > 0) await loadUploads();
+    } finally {
+      setUploadBusy(false);
+    }
+  }, [loadUploads]);
+
+  const clearUploads = useCallback(async () => {
+    await clearUploadedSamples();
+    setUploadedKit(null);
+    setSelectedKit(prev => (prev?.source === 'uploaded' ? null : prev));
+    setSamples(prev => (selectedKit?.source === 'uploaded' ? [] : prev));
+  }, [selectedKit]);
 
   // Load bundled kits from the static manifest (always available, no backend).
   useEffect(() => {
@@ -99,8 +134,9 @@ export const DrumKitBrowser: React.FC = () => {
   // Select a kit → get its samples (inline for built-in, fetched for server).
   const selectKit = useCallback(async (kit: KitEntry) => {
     setSelectedKit(kit);
-    if (kit.source === 'builtin') {
-      setSamples(kit.samples ?? []);
+    // Built-in and uploaded kits carry their samples inline; only server kits fetch.
+    if (kit.samples) {
+      setSamples(kit.samples);
       return;
     }
     setSamplesLoading(true);
@@ -183,7 +219,7 @@ export const DrumKitBrowser: React.FC = () => {
   const matches = (k: KitEntry) => !search || k.name.toLowerCase().includes(search.toLowerCase());
   const shownBuiltin = builtinKits.filter(matches);
   const shownServer = serverKits.filter(matches);
-  const totalKits = builtinKits.length + serverKits.length;
+  const totalKits = builtinKits.length + serverKits.length + (uploadedKit ? 1 : 0);
 
   if (loading) {
     return (
@@ -248,7 +284,43 @@ export const DrumKitBrowser: React.FC = () => {
 
       <div className="flex-1 flex min-h-0">
         {/* Kit List */}
-        <div className="w-48 border-r border-zinc-800 overflow-y-auto flex-shrink-0">
+        <div
+          className={`w-48 border-r overflow-y-auto flex-shrink-0 transition-colors ${
+            dragOver ? 'border-emerald-500 bg-emerald-950/20' : 'border-zinc-800'
+          }`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); }}
+        >
+          {/* Uploads */}
+          <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-emerald-500/70 bg-zinc-900/60 sticky top-0 flex items-center justify-between">
+            <span>Uploads</span>
+            <div className="flex items-center gap-1.5">
+              {uploadedKit && (
+                <button onClick={clearUploads} title="Remove all uploads" className="text-emerald-400/60 hover:text-red-400">
+                  <Trash2 size={10} />
+                </button>
+              )}
+              <label className="text-emerald-400 hover:text-emerald-300 cursor-pointer flex items-center" title="Add your own samples">
+                <Upload size={11} />
+                <input
+                  type="file"
+                  accept="audio/*,.wav,.aiff,.aif,.mp3"
+                  multiple
+                  className="hidden"
+                  onChange={e => { if (e.target.files) handleFiles(e.target.files); e.target.value = ''; }}
+                />
+              </label>
+            </div>
+          </div>
+          {uploadBusy && <div className="px-2 py-1 text-[10px] text-zinc-500">Importing…</div>}
+          {uploadedKit && matches(uploadedKit) && renderKitButton(uploadedKit)}
+          {!uploadedKit && !uploadBusy && (
+            <div className="px-2 py-2 text-[10px] text-zinc-600 leading-snug">
+              Drop samples here, or use the ⤒ icon. Stored in your browser.
+            </div>
+          )}
+
           {shownBuiltin.length > 0 && (
             <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-orange-500/70 bg-zinc-900/60 sticky top-0">
               Built-in
