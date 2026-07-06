@@ -2,22 +2,21 @@
 // MIDI SEQUENCER PANEL — Step sequencer that slides up from the
 // bottom toolbar. Contextual to a clicked module track.
 // Uses Tone.Transport for playback scheduling and SynthEngine for audio.
+//
+// Persistence: every edit auto-saves to the track's clipData immediately —
+// there is no separate "Save" step. Switching to a different pad, or
+// closing the panel, must never lose or reset what's on the grid.
 // ═══════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as Tone from 'tone';
-import { Play, Square, Trash2, ChevronDown, Grid3X3, Plus, Minus } from 'lucide-react';
+import { Play, Square, Trash2, ChevronDown, Grid3X3 } from 'lucide-react';
 import { useLooperStore } from '../../store/store';
 import { synthEngine } from '../../lib/synthEngine';
-import type { MidiEvent } from '../../types';
-
-const STEPS = 16; // 16 steps = 1 bar of 16th notes
-const VELOCITY_LEVELS = 4; // 4 velocity levels
-
-interface Step {
-  active: boolean;
-  velocity: number; // 0.0-1.0
-}
+import {
+  STEP_COUNT as STEPS, encodeStepsToEvents, encodeStepsToClipData, decodeClipDataToSteps, emptyGrid,
+} from '../../lib/stepPattern';
+import type { Step } from '../../lib/stepPattern';
 
 export const MidiSequencerPanel: React.FC = () => {
   const moduleId = useLooperStore(s => s.ui.midiEditorModuleId);
@@ -30,75 +29,93 @@ export const MidiSequencerPanel: React.FC = () => {
   const module = useLooperStore(s => moduleId ? s.song.modules.find(m => m.id === moduleId) : null);
   const track = module?.tracks[trackIndex ?? 0];
 
-  // Step grid state
-  const [steps, setSteps] = useState<Step[]>(() =>
-    Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 }))
-  );
+  // A track's sound source only carries a persistable pattern (clipData) if
+  // it's midiClip or sample — audioInput/liveMidi have no such field.
+  const canPersist = track?.soundSource.type === 'midiClip' || track?.soundSource.type === 'sample';
+  const voiceId = module && track ? `${module.id}:${track.index}` : null;
+
+  const [steps, setSteps] = useState<Step[]>(() => emptyGrid());
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Keep the latest step data in a ref so the Transport callback (registered
-  // once per play) always reads current edits without needing to reschedule.
+  // Keep the latest step data in a ref so Transport callbacks (registered
+  // once per play) always read current edits without needing to reschedule.
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
 
-  // Load existing MIDI data into steps when track changes
+  // Load the track's saved pattern into the grid whenever the track changes.
+  // Previously this unconditionally reset to an empty grid — which both
+  // discarded unsaved edits AND made already-saved patterns look erased the
+  // moment you switched pads. Now it decodes whatever is actually persisted.
   useEffect(() => {
-    if (!track || track.soundSource.type === 'audioInput') return;
-    // Reset to empty grid
-    setSteps(Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 })));
-  }, [moduleId, trackIndex]);
+    if (!track) return;
+    if (canPersist) {
+      const src = track.soundSource as { clipData?: ArrayBuffer };
+      setSteps(decodeClipDataToSteps(src.clipData));
+    } else {
+      setSteps(emptyGrid());
+    }
+  }, [moduleId, trackIndex]); // eslint-disable-line react-hooks/exhaustive-deps -- only re-load on track identity change, not on every store update
 
-  // Live playback on the AUDIO clock. Previously steps were triggered from a
-  // React effect keyed on the rAF-driven store position, so note timing jittered
-  // with the animation frame — the "wonky beat". Tone.Transport.scheduleRepeat
-  // fires on the audio thread and passes an exact `time`, so steps are
-  // sample-accurate and stay locked to the metronome and stored patterns.
-  // Only runs when the panel is open, transport is playing, and the track has
-  // NO stored clipData (playSequence handles stored clips).
+  // Visual playhead only — purely cosmetic, safe to depend on track/module
+  // since its cleanup only clears ITS OWN scheduleRepeat (never touches audio).
   useEffect(() => {
-    if (!isPlaying || !isOpen || !track || !module) return;
-    if (track.soundSource.type === 'audioInput') return;
-    const hasStoredPattern =
-      track.soundSource.type === 'midiClip' &&
-      (track.soundSource as any).clipData?.byteLength > 0;
-    if (hasStoredPattern) return;
-
-    const voiceId = `${module.id}:${track.index}`;
-    const midiNote = track.midiNote;
-    const ticksPerStep = Tone.Transport.PPQ / 4;        // one 16th note
-    const gate = Tone.Time('16n').toSeconds() * 0.9;    // note length, just under a step
-
+    if (!isPlaying || !isOpen || !track) return;
+    const ticksPerStep = Tone.Transport.PPQ / 4; // one 16th note
     const eventId = Tone.Transport.scheduleRepeat((time) => {
-      // Derive the step index from transport position so step 1 always lands on
-      // the downbeat, even when playback started mid-bar.
       const idx = Math.round(Tone.Transport.getTicksAtTime(time) / ticksPerStep) % STEPS;
-      const s = stepsRef.current[idx];
-      if (s?.active) {
-        synthEngine.noteOn(voiceId, midiNote, s.velocity, time);
-        synthEngine.noteOff(voiceId, midiNote, time + gate);
-      }
-      // Sync the visual highlight to the audio event. Never setState directly
-      // inside a Transport callback — it runs off the animation frame and can
-      // fire many times per frame; Tone.Draw defers it to the nearest frame.
       Tone.Draw.schedule(() => setCurrentStep(idx), time);
     }, '16n', 0);
-
-    return () => {
-      Tone.Transport.clear(eventId);
-    };
+    return () => { Tone.Transport.clear(eventId); };
   }, [isPlaying, isOpen, track, module]);
 
-  if (!isOpen || !module || !track) return null;
+  // Re-arm on play-start: if steps were edited while paused, make sure what's
+  // actually scheduled matches the grid the instant Play is pressed. Keyed
+  // ONLY on isPlaying (see below) — every other pad keeps looping via
+  // whatever the global scheduler or a prior edit already set up.
+  useEffect(() => {
+    if (!isPlaying || !isOpen || !track || !voiceId) return;
+    const events = encodeStepsToEvents(stepsRef.current, track.midiNote);
+    synthEngine.stopSequence(voiceId);
+    if (events.length > 0) synthEngine.playSequence(voiceId, events, true);
+    // No cleanup: switching tracks or closing the panel must NOT silence this
+    // pattern — it keeps looping in the background like every other pad.
+    // Deliberately depends ONLY on isPlaying — re-running on every track
+    // switch would re-arm (and audibly restart) whichever pad happens to be
+    // open every time you tap to a different one.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
 
-  const voiceId = `${module.id}:${track.index}`;
-  const currentVelocity = steps[currentStep]?.velocity ?? 0.8;
+  if (!isOpen || !module || !track || !voiceId) return null;
+
+  // Persist + (if playing) hot-swap the audible loop to match, in one place.
+  // This is the ONLY path that writes steps — every handler below computes
+  // the next grid and routes it through here.
+  const commitPattern = (nextSteps: Step[]) => {
+    setSteps(nextSteps);
+
+    const src = track.soundSource;
+    if (src.type === 'midiClip' || src.type === 'sample') {
+      useLooperStore.getState().updateTrack(module.id, track.index, {
+        soundSource: { ...src, clipData: encodeStepsToClipData(nextSteps, track.midiNote) },
+      });
+    }
+
+    if (isPlaying) {
+      // Replace whatever is currently scheduled for this voice (whether from
+      // the global scheduler at transport-start, or a previous edit here) with
+      // the freshly edited pattern. stopSequence cancels the old Transport
+      // callbacks outright, so this can never double-trigger or leave a stale
+      // loop running alongside the new one.
+      synthEngine.stopSequence(voiceId);
+      const events = encodeStepsToEvents(nextSteps, track.midiNote);
+      if (events.length > 0) synthEngine.playSequence(voiceId, events, true);
+    }
+  };
 
   const toggleStep = (index: number) => {
-    setSteps(prev => {
-      const next = [...prev];
-      next[index] = { ...next[index], active: !next[index].active };
-      return next;
-    });
+    const next = [...steps];
+    next[index] = { ...next[index], active: !next[index].active };
+    commitPattern(next);
 
     // Preview the step sound
     if (track.soundSource.type !== 'audioInput') {
@@ -112,46 +129,14 @@ export const MidiSequencerPanel: React.FC = () => {
   };
 
   const adjustVelocity = (index: number, delta: number) => {
-    setSteps(prev => {
-      const next = [...prev];
-      const newVel = Math.max(0, Math.min(1, (next[index].velocity || 0.8) + delta));
-      next[index] = { ...next[index], velocity: newVel };
-      return next;
-    });
+    const next = [...steps];
+    const newVel = Math.max(0, Math.min(1, (next[index].velocity || 0.8) + delta));
+    next[index] = { ...next[index], velocity: newVel };
+    commitPattern(next);
   };
 
   const clearAll = () => {
-    setSteps(Array.from({ length: STEPS }, () => ({ active: false, velocity: 0.8 })));
-  };
-
-  // Convert steps to MidiEvent[] and save to track
-  const savePattern = () => {
-    const events: MidiEvent[] = [];
-    let deltaTime = 0;
-    const stepDuration = 0.25; // 16th note at 4/4 = 0.25 beats
-
-    for (const step of steps) {
-      if (step.active) {
-        events.push({ deltaTime, type: 'noteOn', note: track.midiNote, velocity: Math.round(step.velocity * 127) });
-        events.push({ deltaTime: stepDuration * 0.8, type: 'noteOff', note: track.midiNote, velocity: 0 });
-        deltaTime = stepDuration * 0.2;
-      } else {
-        deltaTime += stepDuration;
-      }
-    }
-
-    // Store the pattern on the track. clipData only exists on a midiClip source —
-    // see roadmap for making sequencer patterns a first-class typed field on the track.
-    const store = useLooperStore.getState();
-    if (track.soundSource.type === 'midiClip') {
-      store.updateTrack(module.id, track.index, {
-        soundSource: {
-          ...track.soundSource,
-          clipData: new TextEncoder().encode(JSON.stringify(events)).buffer,
-        },
-      });
-    }
-    closeMidiEditor();
+    commitPattern(emptyGrid(STEPS));
   };
 
   return (
@@ -171,6 +156,16 @@ export const MidiSequencerPanel: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {canPersist ? (
+            <span className="text-[9px] text-zinc-500 italic">Saves as you edit</span>
+          ) : (
+            <span
+              className="text-[9px] text-amber-500 italic"
+              title="This track type has no pattern storage — edits here won't be remembered."
+            >
+              Not saved on this track type
+            </span>
+          )}
           <button
             onClick={clearAll}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
@@ -178,12 +173,6 @@ export const MidiSequencerPanel: React.FC = () => {
           >
             <Trash2 size={12} />
             Clear
-          </button>
-          <button
-            onClick={savePattern}
-            className="flex items-center gap-1 px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-medium transition-colors"
-          >
-            Save Pattern
           </button>
           <button
             onClick={closeMidiEditor}

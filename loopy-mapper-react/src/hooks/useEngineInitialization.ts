@@ -19,6 +19,7 @@ import { ExpressionEngine, createExpressionEngine } from '../lib/expressionEngin
 import { synthEngine } from '../lib/synthEngine';
 import { looperEngine } from '../lib/audio-worklet';
 import { createMidiRouter, MidiRouter } from '../lib/midiRouter';
+import { decodeClipDataToEvents } from '../lib/stepPattern';
 import type { ClockPosition } from '../types';
 
 export function useEngineInitialization() {
@@ -69,41 +70,27 @@ export function useEngineInitialization() {
                         const voiceId = `${mod.id}:${track.index}`;
                         const src = track.soundSource;
 
-                        // Skip audio input tracks — they don't have sequenced patterns
-                        if (src.type === 'audioInput') continue;
+                        // Only midiClip and sample sources carry a step-sequencer pattern
+                        // (clipData); audioInput/liveMidi have no such field.
+                        if (src.type !== 'midiClip' && src.type !== 'sample') continue;
 
-                        // Check for stored sequencer pattern data (clipData on midiClip sources)
-                        const clipData = (src as any).clipData as ArrayBuffer | undefined;
-                        if (!clipData || clipData.byteLength === 0) continue;
+                        const events = decodeClipDataToEvents(src.clipData);
+                        if (events.length === 0) continue;
 
-                        try {
-                            const decoded = new TextDecoder().decode(clipData);
-                            const events = JSON.parse(decoded) as Array<{
-                                deltaTime: number;
-                                type: 'noteOn' | 'noteOff';
-                                note: number;
-                                velocity: number;
-                            }>;
-
-                            if (events.length === 0) continue;
-
-                            // Only (re)create the voice if it doesn't exist yet, to avoid
-                            // destroying/recreating Tone.Sampler instances whose buffers are
-                            // already loaded.
-                            if (!synthEngine.isVoiceReady(voiceId)) {
-                                synthEngine.setVoice(voiceId, src.soundEngine, track.volume);
-                            }
-
-                            // Stop any existing sequence for this voice first
-                            synthEngine.stopSequence(voiceId);
-
-                            // Schedule the pattern for looping playback via Tone.Transport
-                            synthEngine.playSequence(voiceId, events, true);
-                            activeSequenceVoices.add(voiceId);
-                            console.log(`[Clock] Scheduled pattern for ${voiceId} — ${events.length} events`);
-                        } catch (err) {
-                            console.warn(`[Clock] Failed to decode pattern for ${voiceId}:`, err);
+                        // Only (re)create the voice if it doesn't exist yet, to avoid
+                        // destroying/recreating Tone.Sampler instances whose buffers are
+                        // already loaded.
+                        if (!synthEngine.isVoiceReady(voiceId)) {
+                            synthEngine.setVoice(voiceId, src.soundEngine, track.volume);
                         }
+
+                        // Stop any existing sequence for this voice first
+                        synthEngine.stopSequence(voiceId);
+
+                        // Schedule the pattern for looping playback via Tone.Transport
+                        synthEngine.playSequence(voiceId, events, true);
+                        activeSequenceVoices.add(voiceId);
+                        console.log(`[Clock] Scheduled pattern for ${voiceId} — ${events.length} events`);
                     }
                 }
             };

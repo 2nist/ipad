@@ -122,6 +122,11 @@ export interface SampleSource {
     transpose: number;
     velocityScale: number;
     triggerMode: "oneShot" | "gate";
+    // Step-sequencer pattern for this pad (JSON-encoded MidiEvent[], see
+    // src/lib/stepPattern.ts). Drum module tracks default to a SampleSource
+    // (see store/presets.ts), so this must live here — not just on
+    // MidiClipSource — for the step sequencer to persist drum patterns.
+    clipData?: ArrayBuffer;
 }
 
 export type SoundSource = AudioInputSource | MidiClipSource | LiveMidiSource | SampleSource;

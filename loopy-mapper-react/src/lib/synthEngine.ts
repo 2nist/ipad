@@ -20,6 +20,10 @@ export class SynthEngine {
     private audioContext: AudioContext | null = null;
     private voices: Map<SynthVoiceId, Tone.PolySynth | Tone.Sampler> = new Map();
     private gains: Map<SynthVoiceId, Tone.Gain> = new Map();
+    // Transport event IDs scheduled by playSequence for each voice, so
+    // stopSequence can actually cancel them (see stopSequence for why this
+    // matters — Tone.Transport.schedule callbacks otherwise keep firing).
+    private scheduledEventIds: Map<SynthVoiceId, number[]> = new Map();
     private masterGain: Tone.Gain | null = null;
     private output: Tone.ToneAudioNode | null = null;
     private initialized = false;
@@ -146,6 +150,15 @@ export class SynthEngine {
 
     /** Remove a synth voice (when a track or module is removed). */
     removeVoice(voiceId: SynthVoiceId): void {
+        // Cancel any pending Transport callbacks first — they close over this
+        // synth instance, so left alone they'd call triggerAttack/Release on a
+        // disposed object once their scheduled time arrives.
+        const ids = this.scheduledEventIds.get(voiceId);
+        if (ids) {
+            for (const id of ids) Tone.Transport.clear(id);
+            this.scheduledEventIds.delete(voiceId);
+        }
+
         const synth = this.voices.get(voiceId);
         if (synth) {
             try { synth.dispose(); } catch { /* ignore */ }
@@ -219,30 +232,39 @@ export class SynthEngine {
         const synth = this.voices.get(voiceId);
         if (!synth || events.length === 0) return;
 
-        // Schedule each event relative to the Tone.js Transport position
+        // Schedule each event relative to the Tone.js Transport position.
+        // Collect every scheduled event's id so stopSequence can cancel them —
+        // by the time this fires again (the recursive loop-restart call below),
+        // every id from the previous cycle has already fired and is inert, so
+        // it's safe to wholesale-replace the tracked list rather than append.
+        const ids: number[] = [];
         let currentTime = 0;
         for (const event of events) {
             currentTime += event.deltaTime;
 
             if (event.type === "noteOn") {
                 const noteName = this.midiToNote(event.note);
-                Tone.Transport.schedule((time: number) => {
-                    synth.triggerAttack(noteName, time, event.velocity / 127);
-                }, `+${currentTime}`);
+                ids.push(Tone.Transport.schedule((time: number) => {
+                    // A sampler's buffer may not be loaded yet, or the voice may have
+                    // been disposed between scheduling and firing — same guard as noteOn().
+                    try { synth.triggerAttack(noteName, time, event.velocity / 127); } catch { /* ignore */ }
+                }, `+${currentTime}`));
             } else {
                 const noteName = this.midiToNote(event.note);
-                Tone.Transport.schedule((time: number) => {
-                    synth.triggerRelease(noteName, time);
-                }, `+${currentTime}`);
+                ids.push(Tone.Transport.schedule((time: number) => {
+                    try { synth.triggerRelease(noteName, time); } catch { /* ignore */ }
+                }, `+${currentTime}`));
             }
         }
 
         if (loop) {
             // Schedule loop end -> restart
-            Tone.Transport.schedule((_time: number) => {
+            ids.push(Tone.Transport.schedule((_time: number) => {
                 this.playSequence(voiceId, events, true);
-            }, `+${currentTime}`);
+            }, `+${currentTime}`));
         }
+
+        this.scheduledEventIds.set(voiceId, ids);
     }
 
     /**
@@ -259,13 +281,18 @@ export class SynthEngine {
         return false;
     }
 
-    /** Stop all scheduled events for a voice. */
+    /** Stop all scheduled events for a voice and cancel its pending Transport
+     *  callbacks, so a fresh playSequence() call can safely replace it without
+     *  the old loop's future notes still firing. */
     stopSequence(voiceId: SynthVoiceId): void {
         const synth = this.voices.get(voiceId);
-        if (!synth) return;
-        synth.releaseAll();
-        // Note: Tone.Transport scheduled events continue — the caller should
-        // manage Tone.Transport lifecycle at a higher level
+        if (synth) synth.releaseAll();
+
+        const ids = this.scheduledEventIds.get(voiceId);
+        if (ids) {
+            for (const id of ids) Tone.Transport.clear(id);
+            this.scheduledEventIds.delete(voiceId);
+        }
     }
 
     /** Convert MIDI note number to note name (e.g., 60 → "C4"). */
