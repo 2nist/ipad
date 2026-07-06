@@ -5,7 +5,7 @@
 import type { StateCreator } from 'zustand';
 import type { LooperStore, ClipBrowserFilters } from '../types';
 import { searchClips } from '../lib/api';
-import type { ClipSearchResponse } from '../lib/api';
+import type { ClipSearchResponse, ClipSearchFilters } from '../lib/api';
 
 // Re-export the API response type as the store's search result type
 export type ClipBrowserSearchResult = ClipSearchResponse;
@@ -65,7 +65,7 @@ export const createClipBrowserSlice: StateCreator<
         }));
 
         try {
-            const apiFilters: Record<string, string | number> = {};
+            const apiFilters: ClipSearchFilters = {};
             if (filters.key) apiFilters.key = filters.key;
             if (filters.scale) apiFilters.scale = filters.scale;
             if (filters.dataset) apiFilters.dataset = filters.dataset;
@@ -76,7 +76,7 @@ export const createClipBrowserSlice: StateCreator<
             apiFilters.limit = 24;
             apiFilters.offset = pageOffset ?? 0;
 
-            const result = await searchClips(apiFilters as any);
+            const result = await searchClips(apiFilters);
             set(state => ({
                 clipBrowser: {
                     ...state.clipBrowser,

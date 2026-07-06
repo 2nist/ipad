@@ -8,6 +8,7 @@ import type {
     SongObject, SongMetadata, SongSection, ModuleCard, ModulePreset,
     ModuleTrackConfig, SoundSource, SoundEngine, ChordStep, SectionMarker, TransitionMode,
     MidiBinding, LooperStore, LooperStoreActions,
+    MidiClipSource, LiveMidiSource, SampleSource,
 } from '../types';
 import { getPresetById, MODULE_PRESETS, nextPatternName, resetPatternNames, RHYTHM_MODE_COLORS } from './presets';
 import { synthEngine } from '../lib/synthEngine';
@@ -331,13 +332,7 @@ export const createSongSlice: StateCreator<
                             ...m,
                             tracks: m.tracks.map(t =>
                                 t.index === trackIndex && t.soundSource.type === "midiClip"
-                                    ? {
-                                        ...t,
-                                        soundSource: {
-                                            ...(t.soundSource as { type: "midiClip" }),
-                                            clipId,
-                                        } as any,
-                                    }
+                                    ? { ...t, soundSource: { ...t.soundSource, clipId } }
                                     : t
                             ),
                         }
@@ -373,14 +368,17 @@ export const createSongSlice: StateCreator<
                     m.id === moduleId
                         ? {
                             ...m,
-                            tracks: m.tracks.map(t =>
-                                t.index === trackIndex
-                                    ? {
-                                        ...t,
-                                        soundSource: { ...t.soundSource, soundEngine: engine } as any,
-                                    }
-                                    : t
-                            ),
+                            tracks: m.tracks.map(t => {
+                                if (t.index !== trackIndex) return t;
+                                const source = t.soundSource;
+                                // audioInput has no soundEngine slot; sample only accepts a SamplerEngine
+                                if (source.type === "audioInput") return t;
+                                if (source.type === "sample" && engine.type !== "sampler") return t;
+                                return {
+                                    ...t,
+                                    soundSource: { ...source, soundEngine: engine } as MidiClipSource | LiveMidiSource | SampleSource,
+                                };
+                            }),
                         }
                         : m
                 ),

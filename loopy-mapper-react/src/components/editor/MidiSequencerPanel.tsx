@@ -116,14 +116,17 @@ export const MidiSequencerPanel: React.FC = () => {
       }
     }
 
-    // Store the pattern on the track
+    // Store the pattern on the track. clipData only exists on a midiClip source —
+    // see roadmap for making sequencer patterns a first-class typed field on the track.
     const store = useLooperStore.getState();
-    store.updateTrack(module.id, track.index, {
-      soundSource: {
-        ...track.soundSource,
-        clipData: new TextEncoder().encode(JSON.stringify(events)).buffer as any,
-      } as any,
-    });
+    if (track.soundSource.type === 'midiClip') {
+      store.updateTrack(module.id, track.index, {
+        soundSource: {
+          ...track.soundSource,
+          clipData: new TextEncoder().encode(JSON.stringify(events)).buffer,
+        },
+      });
+    }
     closeMidiEditor();
   };
 

@@ -13,6 +13,11 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const DEFAULT_ZOOM = 1;
 
+// Mouse position at drag-start, plus (for module drags only) the module's
+// own canvasPosition at that moment — needed to compute the new position
+// as an offset from where the module started, not from the canvas origin.
+type DragStart = { x: number; y: number; moduleStartX?: number; moduleStartY?: number };
+
 export const SongCompositionCanvas: React.FC = () => {
     const modules = useLooperStore(s => s.song.modules);
     const { initialized: engineReady, initialize } = useEngineInitialization();
@@ -24,7 +29,7 @@ export const SongCompositionCanvas: React.FC = () => {
     const [zoom, setZoom] = useState(DEFAULT_ZOOM);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [draggingModule, setDraggingModule] = useState<string | null>(null);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragStart, setDragStart] = useState<DragStart>({ x: 0, y: 0 });
     const [panning, setPanning] = useState(false);
     const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +81,8 @@ export const SongCompositionCanvas: React.FC = () => {
             const dy = (e.clientY - dragStart.y) / zoom;
             useLooperStore.getState().updateModule(draggingModule, {
                 canvasPosition: {
-                    x: (dragStart as any)._startX + dx,
-                    y: (dragStart as any)._startY + dy,
+                    x: (dragStart.moduleStartX ?? 0) + dx,
+                    y: (dragStart.moduleStartY ?? 0) + dy,
                 },
             });
             return;
@@ -108,7 +113,8 @@ export const SongCompositionCanvas: React.FC = () => {
         setDragStart({
             x: e.clientX,
             y: e.clientY,
-            ...({ _startX: pos.x, _startY: pos.y } as any),
+            moduleStartX: pos.x,
+            moduleStartY: pos.y,
         });
     }, [modules, lockPosition, bothLocked]);
 
