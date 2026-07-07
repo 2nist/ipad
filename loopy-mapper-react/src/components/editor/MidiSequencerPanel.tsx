@@ -14,7 +14,7 @@ import { Play, Square, Trash2, ChevronDown, Grid3X3 } from 'lucide-react';
 import { useLooperStore } from '../../store/store';
 import { synthEngine } from '../../lib/synthEngine';
 import {
-  STEP_COUNT as STEPS, encodeStepsToEvents, encodeStepsToClipData, decodeClipDataToSteps, emptyGrid,
+  STEP_COUNT as STEPS, encodeStepsToClipData, decodeClipDataToSteps, emptyGrid, stepIndexFromTicks,
 } from '../../lib/stepPattern';
 import type { Step } from '../../lib/stepPattern';
 
@@ -58,38 +58,38 @@ export const MidiSequencerPanel: React.FC = () => {
 
   // Visual playhead only — purely cosmetic, safe to depend on track/module
   // since its cleanup only clears ITS OWN scheduleRepeat (never touches audio).
+  // Uses the SAME tick->step math as the audio loop (stepIndexFromTicks) so
+  // the highlight and what you hear can never disagree about which step "now" is.
   useEffect(() => {
     if (!isPlaying || !isOpen || !track) return;
-    const ticksPerStep = Tone.Transport.PPQ / 4; // one 16th note
     const eventId = Tone.Transport.scheduleRepeat((time) => {
-      const idx = Math.round(Tone.Transport.getTicksAtTime(time) / ticksPerStep) % STEPS;
+      const idx = stepIndexFromTicks(Tone.Transport.getTicksAtTime(time), Tone.Transport.PPQ, STEPS);
       Tone.Draw.schedule(() => setCurrentStep(idx), time);
     }, '16n', 0);
     return () => { Tone.Transport.clear(eventId); };
   }, [isPlaying, isOpen, track, module]);
 
-  // Re-arm on play-start: if steps were edited while paused, make sure what's
-  // actually scheduled matches the grid the instant Play is pressed. Keyed
-  // ONLY on isPlaying (see below) — every other pad keeps looping via
-  // whatever the global scheduler or a prior edit already set up.
+  // Claim this pad's audio loop whenever it's open while playing (covers both
+  // "Play was just pressed while this pad happened to be open" and "switched
+  // to a different pad while already playing"). startPatternLoop reads
+  // stepsRef.current FRESH on every 16th-note tick, so subsequent edits
+  // (toggle/velocity/clear) need no further rescheduling — the running loop
+  // just picks them up on its next tick. No cleanup: switching away from a
+  // pad, or closing the panel, must NOT silence it — it keeps looping via
+  // this same registered Transport repeat, exactly like every other pad.
   useEffect(() => {
     if (!isPlaying || !isOpen || !track || !voiceId) return;
-    const events = encodeStepsToEvents(stepsRef.current, track.midiNote);
-    synthEngine.stopSequence(voiceId);
-    if (events.length > 0) synthEngine.playSequence(voiceId, events, true);
-    // No cleanup: switching tracks or closing the panel must NOT silence this
-    // pattern — it keeps looping in the background like every other pad.
-    // Deliberately depends ONLY on isPlaying — re-running on every track
-    // switch would re-arm (and audibly restart) whichever pad happens to be
-    // open every time you tap to a different one.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying]);
+    synthEngine.startPatternLoop(voiceId, track.midiNote, () => stepsRef.current);
+  }, [isPlaying, isOpen, voiceId]); // eslint-disable-line react-hooks/exhaustive-deps -- track.midiNote intentionally excluded; see startPatternLoop's own limitation note
 
   if (!isOpen || !module || !track || !voiceId) return null;
 
-  // Persist + (if playing) hot-swap the audible loop to match, in one place.
-  // This is the ONLY path that writes steps — every handler below computes
-  // the next grid and routes it through here.
+  // Persist to the store. This is the ONLY path that writes steps — every
+  // handler below computes the next grid and routes it through here. No
+  // explicit audio hot-swap needed: if this pad's loop is currently running
+  // (see the startPatternLoop effect above), it reads stepsRef.current fresh
+  // every tick, so setSteps here is enough for an edit to be heard on the
+  // very next 16th note.
   const commitPattern = (nextSteps: Step[]) => {
     setSteps(nextSteps);
 
@@ -99,17 +99,6 @@ export const MidiSequencerPanel: React.FC = () => {
         soundSource: { ...src, clipData: encodeStepsToClipData(nextSteps, track.midiNote) },
       });
     }
-
-    if (isPlaying) {
-      // Replace whatever is currently scheduled for this voice (whether from
-      // the global scheduler at transport-start, or a previous edit here) with
-      // the freshly edited pattern. stopSequence cancels the old Transport
-      // callbacks outright, so this can never double-trigger or leave a stale
-      // loop running alongside the new one.
-      synthEngine.stopSequence(voiceId);
-      const events = encodeStepsToEvents(nextSteps, track.midiNote);
-      if (events.length > 0) synthEngine.playSequence(voiceId, events, true);
-    }
   };
 
   const toggleStep = (index: number) => {
@@ -117,12 +106,18 @@ export const MidiSequencerPanel: React.FC = () => {
     next[index] = { ...next[index], active: !next[index].active };
     commitPattern(next);
 
-    // Preview the step sound
-    if (track.soundSource.type !== 'audioInput') {
+    // Preview the step sound. Only (re)create the voice if it doesn't already
+    // exist — setVoice() unconditionally disposes and rebuilds a Tone.Sampler,
+    // which re-fetches its sample from scratch. Doing that on every tap kept
+    // destroying an already-loaded sampler right as noteOn tried to use it
+    // ("buffer is either not set or not loaded"), on every single step toggle.
+    if (track.soundSource.type !== 'audioInput' && !synthEngine.isVoiceReady(voiceId)) {
       synthEngine.setVoice(voiceId, track.soundSource.type === 'sample'
         ? track.soundSource.soundEngine
         : { type: 'tonejsPolySynth', synthConfig: { oscillatorType: 'triangle', attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.5 } },
         track.volume);
+    }
+    if (track.soundSource.type !== 'audioInput') {
       synthEngine.noteOn(voiceId, track.midiNote, 0.6);
       setTimeout(() => synthEngine.noteOff(voiceId, track.midiNote), 80);
     }

@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import {
     STEP_COUNT, emptyGrid, encodeStepsToEvents, encodeStepsToClipData,
-    decodeEventsToSteps, decodeClipDataToSteps, decodeClipDataToEvents,
+    decodeEventsToSteps, decodeClipDataToSteps, stepIndexFromTicks,
 } from '../lib/stepPattern';
 import type { Step } from '../lib/stepPattern';
 
@@ -92,18 +92,34 @@ describe('encodeStepsToClipData / decodeClipDataToSteps', () => {
     });
 });
 
-describe('decodeClipDataToEvents', () => {
-    test('round-trips raw events for playback scheduling', () => {
-        const steps = gridFromActiveIndices({ 2: 0.9 });
-        const clipData = encodeStepsToClipData(steps, 40);
-        const events = decodeClipDataToEvents(clipData);
-        expect(events.length).toBe(2); // one noteOn + one noteOff
-        expect(events[0].type).toBe('noteOn');
-        expect(events[0].note).toBe(40);
+describe('stepIndexFromTicks', () => {
+    const PPQ = 192; // Tone.js default
+
+    test('tick 0 is step 0', () => {
+        expect(stepIndexFromTicks(0, PPQ)).toBe(0);
     });
 
-    test('missing/corrupt data returns an empty array, not a throw', () => {
-        expect(decodeClipDataToEvents(undefined)).toEqual([]);
-        expect(decodeClipDataToEvents(new TextEncoder().encode('garbage').buffer)).toEqual([]);
+    test('one 16th note in (48 ticks at PPQ=192) is step 1', () => {
+        expect(stepIndexFromTicks(48, PPQ)).toBe(1);
+    });
+
+    test('exactly one bar (768 ticks) wraps back to step 0', () => {
+        expect(stepIndexFromTicks(768, PPQ)).toBe(0);
+    });
+
+    test('mid-step ticks round to the nearest step', () => {
+        expect(stepIndexFromTicks(47, PPQ)).toBe(1); // rounds up
+        expect(stepIndexFromTicks(24, PPQ)).toBe(1); // exactly halfway rounds up (Math.round)
+        expect(stepIndexFromTicks(23, PPQ)).toBe(0); // rounds down
+    });
+
+    test('is stable regardless of an arbitrary starting offset (no phase drift)', () => {
+        // The whole point of this function: calling it from a loop that was
+        // just re-registered mid-bar must land on the SAME step a
+        // never-interrupted loop would have — there is no "time since
+        // registration" involved, only absolute ticks.
+        const ticksForStep5 = 5 * (PPQ / 4);
+        expect(stepIndexFromTicks(ticksForStep5, PPQ)).toBe(5);
+        expect(stepIndexFromTicks(ticksForStep5 + 768, PPQ)).toBe(5); // one bar later, same step
     });
 });

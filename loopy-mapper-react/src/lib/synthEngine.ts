@@ -6,8 +6,9 @@
 import * as Tone from "tone";
 import type {
     SoundEngine, ToneJsPolySynthEngine, SamplerEngine, MidiOutEngine,
-    MidiEvent,
 } from "../types";
+import { stepIndexFromTicks } from "./stepPattern";
+import type { Step } from "./stepPattern";
 
 export type SynthVoiceId = string; // `${moduleId}:${trackIndex}`
 export type SynthCallback = (voiceId: SynthVoiceId, event: "noteOn" | "noteOff", note: number, velocity: number) => void;
@@ -20,10 +21,9 @@ export class SynthEngine {
     private audioContext: AudioContext | null = null;
     private voices: Map<SynthVoiceId, Tone.PolySynth | Tone.Sampler> = new Map();
     private gains: Map<SynthVoiceId, Tone.Gain> = new Map();
-    // Transport event IDs scheduled by playSequence for each voice, so
-    // stopSequence can actually cancel them (see stopSequence for why this
-    // matters — Tone.Transport.schedule callbacks otherwise keep firing).
-    private scheduledEventIds: Map<SynthVoiceId, number[]> = new Map();
+    // Transport event id for each voice's running pattern loop (see
+    // startPatternLoop), so stopPatternLoop/removeVoice can cancel it.
+    private patternLoopIds: Map<SynthVoiceId, number> = new Map();
     private masterGain: Tone.Gain | null = null;
     private output: Tone.ToneAudioNode | null = null;
     private initialized = false;
@@ -150,14 +150,10 @@ export class SynthEngine {
 
     /** Remove a synth voice (when a track or module is removed). */
     removeVoice(voiceId: SynthVoiceId): void {
-        // Cancel any pending Transport callbacks first — they close over this
-        // synth instance, so left alone they'd call triggerAttack/Release on a
-        // disposed object once their scheduled time arrives.
-        const ids = this.scheduledEventIds.get(voiceId);
-        if (ids) {
-            for (const id of ids) Tone.Transport.clear(id);
-            this.scheduledEventIds.delete(voiceId);
-        }
+        // Cancel any running pattern loop first — its callback closes over
+        // this synth instance, so left alone it'd call triggerAttack/Release
+        // on a disposed object on its next tick.
+        this.stopPatternLoop(voiceId);
 
         const synth = this.voices.get(voiceId);
         if (synth) {
@@ -225,46 +221,54 @@ export class SynthEngine {
     }
 
     /**
-     * Play a sequence of MIDI events through a voice (for MidiClipSource playback).
-     * Uses Tone.js Transport for playback timing.
+     * Start (or replace) a bar-aligned, phase-stable step-pattern loop for a
+     * voice. Anchored to the absolute 16th-note grid (Transport ticks from 0)
+     * rather than "N seconds from whenever this is called" — that grid is the
+     * same regardless of when you register it, so replacing an existing loop
+     * (e.g. on every edit) can never introduce a phase shift. An earlier
+     * version used a chain of relative `Tone.Transport.schedule(cb, "+N")`
+     * calls that each restarted their own private clock from the moment of
+     * scheduling — hot-swapping that on every edit made every pad drift out
+     * of sync with the others and the metronome ("beats at the wrong rate").
+     *
+     * `getSteps` is called fresh on every 16th-note tick, so edits to the
+     * underlying data (e.g. a ref, or the store) take effect on the very next
+     * tick — no stop/restart needed for an edit to be heard.
      */
-    playSequence(voiceId: SynthVoiceId, events: MidiEvent[], loop: boolean = false): void {
+    startPatternLoop(voiceId: SynthVoiceId, midiNote: number, getSteps: () => Step[]): void {
+        this.stopPatternLoop(voiceId);
         const synth = this.voices.get(voiceId);
-        if (!synth || events.length === 0) return;
+        if (!synth) return;
 
-        // Schedule each event relative to the Tone.js Transport position.
-        // Collect every scheduled event's id so stopSequence can cancel them —
-        // by the time this fires again (the recursive loop-restart call below),
-        // every id from the previous cycle has already fired and is inert, so
-        // it's safe to wholesale-replace the tracked list rather than append.
-        const ids: number[] = [];
-        let currentTime = 0;
-        for (const event of events) {
-            currentTime += event.deltaTime;
+        const noteName = this.midiToNote(midiNote);
 
-            if (event.type === "noteOn") {
-                const noteName = this.midiToNote(event.note);
-                ids.push(Tone.Transport.schedule((time: number) => {
-                    // A sampler's buffer may not be loaded yet, or the voice may have
-                    // been disposed between scheduling and firing — same guard as noteOn().
-                    try { synth.triggerAttack(noteName, time, event.velocity / 127); } catch { /* ignore */ }
-                }, `+${currentTime}`));
-            } else {
-                const noteName = this.midiToNote(event.note);
-                ids.push(Tone.Transport.schedule((time: number) => {
-                    try { synth.triggerRelease(noteName, time); } catch { /* ignore */ }
-                }, `+${currentTime}`));
+        const id = Tone.Transport.scheduleRepeat((time: number) => {
+            const steps = getSteps();
+            if (steps.length === 0) return;
+            const idx = stepIndexFromTicks(Tone.Transport.getTicksAtTime(time), Tone.Transport.PPQ, steps.length);
+            const step = steps[idx];
+            if (!step?.active) return;
+            const gateSeconds = Tone.Time("16n").toSeconds() * 0.8;
+            try {
+                synth.triggerAttackRelease(noteName, gateSeconds, time, step.velocity);
+            } catch {
+                // Sampler buffer may not be loaded yet, or the voice was disposed
+                // between scheduling and firing — same guard as noteOn().
             }
-        }
+        }, "16n", 0);
 
-        if (loop) {
-            // Schedule loop end -> restart
-            ids.push(Tone.Transport.schedule((_time: number) => {
-                this.playSequence(voiceId, events, true);
-            }, `+${currentTime}`));
-        }
+        this.patternLoopIds.set(voiceId, id);
+    }
 
-        this.scheduledEventIds.set(voiceId, ids);
+    /** Stop a voice's running pattern loop (see startPatternLoop). */
+    stopPatternLoop(voiceId: SynthVoiceId): void {
+        const id = this.patternLoopIds.get(voiceId);
+        if (id !== undefined) {
+            Tone.Transport.clear(id);
+            this.patternLoopIds.delete(voiceId);
+        }
+        const synth = this.voices.get(voiceId);
+        if (synth) synth.releaseAll();
     }
 
     /**
@@ -279,20 +283,6 @@ export class SynthEngine {
         if (synth instanceof Tone.PolySynth) return true;
         if (synth instanceof Tone.Sampler) return (synth as any).loaded === true;
         return false;
-    }
-
-    /** Stop all scheduled events for a voice and cancel its pending Transport
-     *  callbacks, so a fresh playSequence() call can safely replace it without
-     *  the old loop's future notes still firing. */
-    stopSequence(voiceId: SynthVoiceId): void {
-        const synth = this.voices.get(voiceId);
-        if (synth) synth.releaseAll();
-
-        const ids = this.scheduledEventIds.get(voiceId);
-        if (ids) {
-            for (const id of ids) Tone.Transport.clear(id);
-            this.scheduledEventIds.delete(voiceId);
-        }
     }
 
     /** Convert MIDI note number to note name (e.g., 60 → "C4"). */

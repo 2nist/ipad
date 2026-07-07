@@ -19,7 +19,8 @@ import { ExpressionEngine, createExpressionEngine } from '../lib/expressionEngin
 import { synthEngine } from '../lib/synthEngine';
 import { looperEngine } from '../lib/audio-worklet';
 import { createMidiRouter, MidiRouter } from '../lib/midiRouter';
-import { decodeClipDataToEvents } from '../lib/stepPattern';
+import { findControllerProfile, CONTROLLER_PROFILES } from '../lib/controllerPresets';
+import { decodeClipDataToSteps } from '../lib/stepPattern';
 import type { ClockPosition } from '../types';
 
 export function useEngineInitialization() {
@@ -28,13 +29,23 @@ export function useEngineInitialization() {
 
     const initialize = useCallback(async () => {
         try {
-            // Step 1: Mark initialized in store (requests MIDI access)
-            await initializeEngines();
-
-            // Step 2: Start Tone.js — this creates the shared AudioContext
+            // Step 1: Start Tone.js FIRST, before anything else async. This
+            // must happen synchronously-ish inside the user gesture that
+            // triggered `initialize()` — Chrome's autoplay policy requires
+            // AudioContext.resume() to ride the browser's transient
+            // user-activation window, which an intervening `await` (like the
+            // MIDI permission prompt below) can burn through, especially if
+            // it shows its own browser UI. Previously MIDI access was
+            // requested first, which left the AudioContext stuck suspended
+            // ("AudioContext was not allowed to start") and cascaded into the
+            // AudioWorkletNode/Sampler failures downstream. WebMIDI access
+            // doesn't need a user gesture, so it's safe to request after.
             await Tone.start();
             const audioContext = Tone.getContext().rawContext as AudioContext;
             console.log('[Init] Tone.js started, AudioContext:', audioContext.state);
+
+            // Step 2: Mark initialized in store (requests MIDI access)
+            await initializeEngines();
 
             // Step 3: Initialize LooperEngine (AudioWorklet) with the shared AudioContext
             await looperEngine.initialize(audioContext);
@@ -74,8 +85,8 @@ export function useEngineInitialization() {
                         // (clipData); audioInput/liveMidi have no such field.
                         if (src.type !== 'midiClip' && src.type !== 'sample') continue;
 
-                        const events = decodeClipDataToEvents(src.clipData);
-                        if (events.length === 0) continue;
+                        const initialSteps = decodeClipDataToSteps(src.clipData);
+                        if (!initialSteps.some(s => s.active)) continue;
 
                         // Only (re)create the voice if it doesn't exist yet, to avoid
                         // destroying/recreating Tone.Sampler instances whose buffers are
@@ -84,20 +95,26 @@ export function useEngineInitialization() {
                             synthEngine.setVoice(voiceId, src.soundEngine, track.volume);
                         }
 
-                        // Stop any existing sequence for this voice first
-                        synthEngine.stopSequence(voiceId);
-
-                        // Schedule the pattern for looping playback via Tone.Transport
-                        synthEngine.playSequence(voiceId, events, true);
+                        // getSteps re-reads the store fresh on every 16th-note tick (not
+                        // just once at schedule time), so an edit auto-saved by the
+                        // sequencer panel is picked up on its very next tick — no explicit
+                        // re-scheduling needed when the user edits a pad while it plays.
+                        synthEngine.startPatternLoop(voiceId, track.midiNote, () => {
+                            const liveTrack = useLooperStore.getState().song.modules
+                                .find(m => m.id === mod.id)?.tracks[track.index];
+                            const liveSrc = liveTrack?.soundSource;
+                            if (!liveSrc || (liveSrc.type !== 'midiClip' && liveSrc.type !== 'sample')) return [];
+                            return decodeClipDataToSteps(liveSrc.clipData);
+                        });
                         activeSequenceVoices.add(voiceId);
-                        console.log(`[Clock] Scheduled pattern for ${voiceId} — ${events.length} events`);
+                        console.log(`[Clock] Scheduled pattern loop for ${voiceId}`);
                     }
                 }
             };
 
             const stopAllSequences = () => {
                 for (const voiceId of activeSequenceVoices) {
-                    synthEngine.stopSequence(voiceId);
+                    synthEngine.stopPatternLoop(voiceId);
                 }
                 activeSequenceVoices.clear();
             };
@@ -237,11 +254,34 @@ export function useEngineInitialization() {
                 await midiRouter.initialize(midiAccess);
                 midiRouter.autoGenerateBindings();
 
+                // Load controller profile if device matches a known preset
+                let loadedProfileName: string | null = null;
+                const inputNames: string[] = [];
+                for (const input of midiAccess.inputs.values()) {
+                    const name = input.name ?? "(unnamed)";
+                    inputNames.push(name);
+                    const profile = findControllerProfile(name);
+                    if (profile) {
+                        midiRouter.loadProfile(profile.bindings);
+                        loadedProfileName = profile.name;
+                        console.log(`[Init] Loaded controller profile: ${profile.name} for "${name}"`);
+                    }
+                }
+                console.log(`[Init] MIDI inputs detected: ${inputNames.join(", ") || "none"}`);
+                if (!loadedProfileName && inputNames.length > 0) {
+                    console.log(`[Init] No controller profile matched. Known profiles: ${
+                        CONTROLLER_PROFILES.map(p => p.deviceMatch).join(", ")
+                    }. Connected: ${inputNames.join(", ")}`);
+                }
+                loadedProfileName = loadedProfileName ?? inputNames[0] ?? null;
+
                 midiRouter.onRouterEvent((event) => {
                     useLooperStore.setState({
                         ui: {
                             ...useLooperStore.getState().ui,
+                            midiDeviceConnected: true,
                             midiActivity: event.type !== 'learn',
+                            connectedMidiDevice: loadedProfileName ?? undefined,
                         },
                     });
                 });

@@ -306,7 +306,9 @@ const TrackEditor: React.FC<{
                 const src = track.soundSource;
                 // Only MIDI clip, sample, and liveMidi sources have a soundEngine
                 const engine = (src.type !== 'audioInput') ? src.soundEngine : { type: 'tonejsPolySynth' as const, synthConfig: { oscillatorType: 'triangle' as const, attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.5 } };
-                synthEngine.setVoice(voiceId, engine, track.volume);
+                if (!synthEngine.isVoiceReady(voiceId)) {
+                  synthEngine.setVoice(voiceId, engine, track.volume);
+                }
                 synthEngine.noteOn(voiceId, track.midiNote, 0.8);
                 setTimeout(() => synthEngine.noteOff(voiceId, track.midiNote), 200);
                 setShowOutMenu(false);
@@ -557,11 +559,17 @@ export const DrumModuleCard: React.FC<{ module: ModuleCard }> = ({ module }) => 
             const handlePadClick = () => {
               // 1. Select this pad for the sequencer
               openMidiEditor(module.id, i);
-              // 2. Play preview sound
+              // 2. Play preview sound. Only (re)create the voice if it isn't
+              // already loaded — setVoice() unconditionally disposes and
+              // rebuilds a Tone.Sampler, re-fetching its sample from scratch,
+              // which kept destroying an already-loaded sampler on every tap
+              // right as noteOn tried to use it ("buffer not loaded").
               const voiceId = `${module.id}:${i}`;
               const src = track.soundSource;
               const engine = (src.type !== 'audioInput') ? src.soundEngine : { type: 'tonejsPolySynth' as const, synthConfig: { oscillatorType: 'triangle' as const, attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.5 } };
-              synthEngine.setVoice(voiceId, engine, track.volume);
+              if (!synthEngine.isVoiceReady(voiceId)) {
+                synthEngine.setVoice(voiceId, engine, track.volume);
+              }
               synthEngine.noteOn(voiceId, track.midiNote, 0.8);
               setTimeout(() => synthEngine.noteOff(voiceId, track.midiNote), 150);
             };

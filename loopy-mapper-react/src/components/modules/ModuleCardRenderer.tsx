@@ -74,8 +74,14 @@ const TrackRow: React.FC<{ module: ModuleCard }> = ({ module }) => {
         // Only MIDI-based sources can trigger synth notes
         if (source.type === 'audioInput') return;
 
-        // Ensure synth voice exists for MIDI sources
-        synthEngine.setVoice(voiceId, source.soundEngine, track.volume);
+        // Ensure synth voice exists for MIDI sources — but only create one if
+        // it doesn't already exist. setVoice() unconditionally disposes and
+        // rebuilds a Tone.Sampler (re-fetching its sample from scratch), so
+        // calling it unconditionally on every test-hit tap destroyed an
+        // already-loaded sampler right as noteOn tried to use it.
+        if (!synthEngine.isVoiceReady(voiceId)) {
+            synthEngine.setVoice(voiceId, source.soundEngine, track.volume);
+        }
 
         // Play a short test note (300ms)
         synthEngine.noteOn(voiceId, note, 0.8);

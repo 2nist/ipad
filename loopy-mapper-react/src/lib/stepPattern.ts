@@ -4,7 +4,7 @@
 // ArrayBuffer, stored on the track's sound source).
 //
 // This is the single source of truth for the wire format so the grid
-// (MidiSequencerPanel) and the playback engine (synthEngine.playSequence,
+// (MidiSequencerPanel) and the playback engine (synthEngine.startPatternLoop,
 // scheduled in useEngineInitialization) can never drift out of sync.
 // ═══════════════════════════════════════════════════════════════════
 
@@ -16,6 +16,17 @@ export const STEP_DURATION_BEATS = 0.25; // a 16th note at 4/4
 export interface Step {
     active: boolean;
     velocity: number; // 0.0-1.0
+}
+
+/**
+ * Map an absolute Transport tick position to a step index, on the grid
+ * anchored at tick 0 (a fixed, tempo-relative grid — NOT relative to when
+ * this is called). Shared by the audio pattern loop and the visual playhead
+ * so they can never disagree about which step "now" is.
+ */
+export function stepIndexFromTicks(ticks: number, ppq: number, stepCount: number = STEP_COUNT): number {
+    const ticksPerStep = ppq / 4; // one 16th note
+    return Math.round(ticks / ticksPerStep) % stepCount;
 }
 
 export function emptyGrid(stepCount: number = STEP_COUNT): Step[] {
@@ -79,16 +90,5 @@ export function decodeClipDataToSteps(clipData: ArrayBuffer | undefined, stepCou
         return decodeEventsToSteps(events, stepCount);
     } catch {
         return emptyGrid(stepCount);
-    }
-}
-
-/** Parse a track's persisted clipData into raw MidiEvent[] (for playback
- *  scheduling, where the grid shape doesn't matter). Never throws. */
-export function decodeClipDataToEvents(clipData: ArrayBuffer | undefined): MidiEvent[] {
-    if (!clipData || clipData.byteLength === 0) return [];
-    try {
-        return JSON.parse(new TextDecoder().decode(clipData)) as MidiEvent[];
-    } catch {
-        return [];
     }
 }
